@@ -1,6 +1,6 @@
 # invest-platform
 
-Backend institucional de `invest.trujillomingorance.com`.
+Backend institucional de `subdomain.yourdomain.com`.
 
 Recibe cualquier identificador global (acciones, cripto, bonos soberanos, FX y materias primas), consulta EODHD / Financial Modeling Prep / OpenBB, normaliza estados financieros entre IFRS y US GAAP, y entrega un payload único tipado para el motor cuantitativo.
 
@@ -83,5 +83,6 @@ Producción (Cloudflare Worker + assets, ruta de zona sobre el DNS comodín):
 npm run deploy
 ```
 
-Host: [invest.trujillomingorance.com](https://invest.trujillomingorance.com)
+Host: [subdomain.yourdomain.com](https://subdomain.yourdomain.com)
+
 
