@@ -1,0 +1,20 @@
+name = "invest"
+main = "src/edge/worker.ts"
+compatibility_date = "2026-09-19"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+
+[assets]
+directory = "./web/out"
+binding = "ASSETS"
+html_handling = "auto-trailing-slash"
+not_found_handling = "404-page"
+
+[vars]
+ENABLE_DEMO_FIXTURES = "true"
+ENABLE_LIVE_QUOTES = "true"
+ENVIRONMENT = "production"
+
+[[routes]]
+pattern = "invest.trujillomingorance.com/*"
+zone_name = "trujillomingorance.com"

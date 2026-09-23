@@ -1,0 +1,47 @@
+{
+  "name": "invest-platform",
+  "version": "1.0.0",
+  "description": "Institutional market-data backend for invest.trujillomingorance.com — global identifier resolution, IFRS/US GAAP normalization, unified quantitative payload.",
+  "type": "module",
+  "main": "dist/index.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev:web": "npm --prefix web run dev",
+    "build:web": "npm --prefix web run build",
+    "deploy": "npm --prefix web run build && npx wrangler deploy"
+  },
+  "keywords": [
+    "fintech",
+    "quant",
+    "eodhd",
+    "fmp",
+    "openbb",
+    "ifrs",
+    "us-gaap"
+  ],
+  "author": "Alberto Trujillo Mingorance",
+  "license": "MIT",
+  "dependencies": {
+    "@fastify/cors": "^10.0.2",
+    "@fastify/rate-limit": "^10.2.2",
+    "fastify": "^5.2.1",
+    "ioredis": "^5.6.0",
+    "pino": "^9.6.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "pino-pretty": "^13.0.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.9"
+  }
+}
