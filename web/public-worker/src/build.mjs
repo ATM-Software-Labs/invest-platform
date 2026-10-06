@@ -75,7 +75,7 @@ function subForm(id, opts) {
 const HASH_REDIRECT = `<script>if(location.hash==='#munger-help'){location.replace('/munger/');}</script>\n`;
 
 function buildPages() {
-  const homeHtml = `${head("INVEST", "Cuaderno p\u00fablico de modelos mentales y preservaci\u00f3n de capital. Consulta informativa de un activo con criterios medibles. No es una recomendaci\u00f3n.", HASH_REDIRECT)}
+  const homeHtml = `${head("INVEST \u00b7 Comparador de acciones, ETF y cripto con datos p\u00fablicos", "Consulta y compara acciones, ETF, \u00edndices y criptomonedas por ticker, nombre o ISIN: cotizaci\u00f3n, cifras 10-K de la SEC y checklist Munger. Informaci\u00f3n general, no es asesoramiento.", HASH_REDIRECT)}
 <body class="min-h-screen bg-bg text-ink font-sans antialiased flex flex-col">
 ${topbar("#q", "Analizar", "/")}
 <main class="flex-1">
@@ -90,7 +90,7 @@ ${topbar("#q", "Analizar", "/")}
         <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-dim" aria-hidden="true">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
         </span>
-        <input id="q" name="q" type="search" autocomplete="off" spellcheck="false" enterkeyhint="search" placeholder="Buscar ticker... p. ej. AAPL, IDR.MC" data-i18n="searchPh"
+        <input id="q" name="q" type="search" autocomplete="off" spellcheck="false" enterkeyhint="search" placeholder="Ticker, nombre o ISIN... p. ej. AAPL, Inditex" data-i18n="searchPh"
           class="atm-input w-full rounded-2xl py-3.5 pl-11 pr-28 font-mono text-sm shadow-sm"/>
         <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-pill px-3.5 py-2 font-sans text-xs font-semibold text-white transition-all hover:brightness-110 active:scale-[0.98] max-[390px]:px-2.5 max-[390px]:text-[11px]" data-i18n="searchBtn">Analizar</button>
       </div>
@@ -138,7 +138,7 @@ ${topbar("#q", "Analizar", "/")}
       ${card("/munger/", "mungerEyebrow", "Checklist", "mungerTitle", "Que tan Munger es la accion", "mungerLead", "Criterios medibles a partir de cifras anuales: margen neto, margen FCF, efectivo frente a deuda. Sin puntuacion 1-10.")}
       ${card("/ensayos/redundancia-de-efectivo/", "essayKicker", "ENSAYO", "essayTitle", "Por que la redundancia de efectivo supera al apalancamiento", "essayLead", "Por que la holgura de caja supera al apalancamiento. LTCM como caso real.", `\n            <p class="mt-3 font-mono text-[11px] text-dim" data-i18n="essayRead">~6 min de lectura</p>`)}
       ${card("/modelos/", "cardModelsEyebrow", "Modelos", "cardModelsTitle", "Modelos mentales", "cardModelsLead", "Margen de seguridad, c\u00edrculo de competencia, inversi\u00f3n, coste de oportunidad, redundancia, tasas base e incentivos.")}
-      ${card("/comparar/", "cardCompareEyebrow", "Comparar", "cardCompareTitle", "Comparar 2\u20133 tickers", "cardCompareLead", "Cifras lado a lado tal como las devuelve la consulta. Lo que falta se muestra como \u00absin dato\u00bb.")}
+      ${card("/comparar/", "cardCompareEyebrow", "Comparar", "cardCompareTitle", "Comparar 2\u20133 activos", "cardCompareLead", "Cifras lado a lado tal como las devuelve la consulta. Lo que falta se muestra como \u00absin dato\u00bb.")}
       ${card("/glosario/", "cardGlossaryEyebrow", "Glosario", "cardGlossaryTitle", "T\u00e9rminos del panel", "cardGlossaryLead", "Qu\u00e9 significan FCF, margen neto, deuda LP, 10-K y el resto de cifras que muestra la consulta.")}
       ${card("/suscribirse/", "cardSubEyebrow", "Notas", "cardSubTitle", "Suscribirse", "cardSubLead", "Markets e INVEST, cada una con su casilla. Doble confirmaci\u00f3n y baja en un clic.")}
     </div>
@@ -196,9 +196,9 @@ ${(scripts || []).map(script).join("\n")}
 
   const compareInner = `
     <form id="cmp-form" action="/comparar/" method="get" class="atm-card mt-6 grid gap-3 rounded-2xl p-5 sm:grid-cols-3 md:p-6">
-      <div><label for="ca" class="mb-1.5 block font-sans text-xs font-medium text-mute" data-i18n="compareA">Ticker 1</label><input id="ca" type="text" autocomplete="off" spellcheck="false" placeholder="AAPL" class="atm-input w-full rounded-xl px-3 py-2.5 font-mono text-sm"/></div>
-      <div><label for="cb" class="mb-1.5 block font-sans text-xs font-medium text-mute" data-i18n="compareB">Ticker 2</label><input id="cb" type="text" autocomplete="off" spellcheck="false" placeholder="MSFT" class="atm-input w-full rounded-xl px-3 py-2.5 font-mono text-sm"/></div>
-      <div><label for="cc" class="mb-1.5 block font-sans text-xs font-medium text-mute" data-i18n="compareC">Ticker 3 (opcional)</label><input id="cc" type="text" autocomplete="off" spellcheck="false" placeholder="KO" class="atm-input w-full rounded-xl px-3 py-2.5 font-mono text-sm"/></div>
+      <div><label for="ca" class="mb-1.5 block font-sans text-xs font-medium text-mute" data-i18n="compareA">Activo 1 (ticker, nombre o ISIN)</label><input id="ca" type="text" autocomplete="off" spellcheck="false" placeholder="AAPL" class="atm-input w-full rounded-xl px-3 py-2.5 font-mono text-sm"/></div>
+      <div><label for="cb" class="mb-1.5 block font-sans text-xs font-medium text-mute" data-i18n="compareB">Activo 2</label><input id="cb" type="text" autocomplete="off" spellcheck="false" placeholder="Inditex" class="atm-input w-full rounded-xl px-3 py-2.5 font-mono text-sm"/></div>
+      <div><label for="cc" class="mb-1.5 block font-sans text-xs font-medium text-mute" data-i18n="compareC">Activo 3 (opcional)</label><input id="cc" type="text" autocomplete="off" spellcheck="false" placeholder="IE00B4L5Y983" class="atm-input w-full rounded-xl px-3 py-2.5 font-mono text-sm"/></div>
       <div class="sm:col-span-3"><button type="submit" class="rounded-full bg-pill px-5 py-2.5 font-sans text-sm font-semibold text-white transition-all hover:brightness-110" data-i18n="compareBtn">Comparar</button></div>
     </form>
     <div id="cmp-result" class="mt-6" aria-live="polite"></div>
@@ -235,8 +235,8 @@ ${script(perfilJs)}
       active: "/glosario/", crumb: "INVEST \u203a GLOSARIO", crumbKey: "crumbGlossary", h1: "Glosario", h1Key: "glossaryH1", esNote: true, inner: prose(glosarioBody),
     }),
     "/comparar/": page({
-      title: "Comparar tickers \u00b7 INVEST", description: "Compara 2 o 3 tickers lado a lado con los datos de la consulta (Yahoo + SEC 10-K). Sin ranking ni recomendaciones.",
-      active: "/comparar/", crumb: "INVEST \u203a COMPARAR", crumbKey: "crumbCompare", h1: "Comparar tickers", h1Key: "compareH1", wide: true,
+      title: "Comparador de activos: acciones, ETF y cripto \u00b7 INVEST", description: "Compara 2 o 3 activos lado a lado por ticker, nombre o ISIN (acciones, ETF, \u00edndices, cripto): precio, m\u00e1rgenes y flujo de caja 10-K. Sin ranking ni recomendaciones.",
+      active: "/comparar/", crumb: "INVEST \u203a COMPARAR", crumbKey: "crumbCompare", h1: "Comparador de activos", h1Key: "compareH1", wide: true,
       lead: "Cifras lado a lado tal como las devuelve la consulta. Lo que falta se muestra como \u00absin dato\u00bb.", leadKey: "cardCompareLead",
       inner: compareInner, scripts: [compareJs],
     }),
@@ -343,6 +343,7 @@ for (const blk of candidates) {
 const htmlFn = `async function html(page, path) {
   let text = page.replace(/<!--B(\\d+)-->/g, function (m, i) { return BLOCKS[+i]; });
   if (path) text = text.split('<a href="' + path + '" data-i18n="nav').join('<a href="' + path + '" aria-current="page" data-i18n="nav');
+  text = withSeo(text, path || "/");
   return new Response(text, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-cache, max-age=0, must-revalidate", "x-content-type-options": "nosniff", "referrer-policy": "strict-origin-when-cross-origin" } });
 }`;
 const hs = api.indexOf("async function html(");

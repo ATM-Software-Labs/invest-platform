@@ -5,7 +5,7 @@
   "description": "Build of the static INVEST Cloudflare Worker (pages + /api/quote + /api/subscribe).",
   "scripts": {
     "build": "node src/build.mjs",
-    "test": "node src/test-worker-mocks.mjs"
+    "test": "node src/test-resolver.mjs && node src/test-worker-mocks.mjs"
   },
   "devDependencies": {
     "esbuild": "0.24.2",

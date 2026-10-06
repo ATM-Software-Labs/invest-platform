@@ -13,6 +13,7 @@ Source of the static Cloudflare Worker that serves the public INVEST site: pre-r
 | `src/*-app.js`, `src/*-shared.js` | Client scripts inlined into the pages. |
 | `src/worker-quote.js`, `src/worker-sub.js` | Worker code: quotes API, subscription (Turnstile + honeypot + rate limit, Brevo double opt-in) and routing. |
 | `src/icon.png`, `src/input.css` | Favicon (inlined as base64) and Tailwind entry file. |
+| `src/test-resolver.mjs` | Tests of `/api/quote` symbol resolution (ticker, name, ISIN, aliases, share classes, accents, upstream errors) and `/api/search`, with Yahoo/SEC mocked. |
 | `src/test-worker-mocks.mjs` | Smoke test of `dist/worker.js` with mocked KV, Turnstile and Brevo. |
 | `src/verify-playwright.mjs` | Optional visual check against a running worker (`node src/verify-playwright.mjs <base-url> [out-dir]`, needs `playwright`). |
 
@@ -56,4 +57,22 @@ npx wrangler deploy -c wrangler.toml
 | `SUB_TEST_TOKEN` + `SUB_TEST_EMAIL` | secret + var, temporary | End-to-end test hook: a request with header `x-invest-test: <token>` for exactly `SUB_TEST_EMAIL` skips Turnstile. Inert unless both exist; delete both right after the test. |
 
 Endpoints: `POST /api/subscribe` (alias `/api/newsletter`), `GET /api/subscribe/status`, `/confirmado/` (DOI redirect),
-`GET /api/quote`, `/assets/app.css`, `/favicon.png`, `/sitemap.xml`, `/robots.txt`.
+`GET /api/quote`, `GET /api/search`, `/assets/app.css`, `/favicon.png`, `/og-image.png`, `/sitemap.xml`, `/robots.txt`.
+
+## Symbol resolution (`/api/quote?q=`)
+
+1. Curated aliases (`ALIASES` in `src/worker-quote.js`): indices (`S&P 500`, `IBEX 35`), crypto (`BTC`, `bitcoin`),
+   commodities (`oro`, `brent`), IBEX 35 company names and a few popular names whose ticker differs.
+2. ISIN (checksum-validated) via Yahoo Finance search.
+3. Ticker-looking input: exact Yahoo chart lookup, then share-class mapping (`BRK.B` -> `BRK-B`).
+4. Otherwise Yahoo search (retrying with accents removed and without spaces), ranked by type and venue
+   (OTC, regional German, synthetic and CDR lines demoted), trying up to 3 candidates.
+
+Responses: `200` with `resolved` and `alternatives`; `404 not_found` with `suggestions`; `502 upstream_unavailable`
+(not cached) when Yahoo rate-limits or fails. Yahoo search responses are cached for a day in the Workers cache.
+
+## SEO
+
+Canonical, robots (`/confirmado/` is `noindex`), Open Graph, Twitter card and JSON-LD are injected per request
+from each page's `<title>` and meta description (`withSeo` in `src/worker-sub.js`). `/og-image.png` proxies
+`docs/og-image.png` from the GitHub repo (cached), falling back to the favicon.

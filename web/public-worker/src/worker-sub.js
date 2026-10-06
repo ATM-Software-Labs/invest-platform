@@ -247,6 +247,62 @@ async function handleSubscribe(request, env) {
   return json({ ok: true, status: "pending" }, 200);
 }
 
+// ---- SEO: canonical, Open Graph, Twitter card, robots and JSON-LD, injected per request from each page's title/description ----
+const OG_IMAGE_SOURCE = "https://raw.githubusercontent.com/ATM-Software-Labs/invest-platform/master/docs/og-image.png";
+async function ogImage() {
+  try {
+    const res = await fetch(OG_IMAGE_SOURCE, { cf: { cacheTtl: 86400, cacheEverything: true }, signal: AbortSignal.timeout(8000) });
+    if (res.ok) return new Response(res.body, { headers: { "content-type": "image/png", "cache-control": "public, max-age=86400" } });
+  } catch (err) {}
+  return Response.redirect(SITE_ORIGIN + "/favicon.png", 302);
+}
+function seoDecode(s) {
+  return s.replace(/&quot;/g, '"').replace(/&laquo;/g, "\u00ab").replace(/&raquo;/g, "\u00bb").replace(/&amp;/g, "&");
+}
+function seoAttr(s) {
+  return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+}
+function seoLd(o) {
+  return '<script type="application/ld+json">' + JSON.stringify(o).replace(/</g, "\\u003c") + "</script>";
+}
+function withSeo(text, path) {
+  const anchor = text.match(/<meta name="description" content="([^"]*)"\/>/);
+  if (!anchor || text.indexOf('rel="canonical"') !== -1) return text;
+  const titleM = text.match(/<title>([^<]*)<\/title>/);
+  const title = seoDecode(titleM ? titleM[1] : "INVEST");
+  const desc = seoDecode(anchor[1]);
+  const url = SITE_ORIGIN + path;
+  const site = { "@type": "WebSite", name: "INVEST", url: SITE_ORIGIN + "/" };
+  const ld = path === "/" ? [
+    { "@context": "https://schema.org", "@type": "WebSite", name: "INVEST", alternateName: "INVEST \u00b7 Trujillo Mingorance", url: SITE_ORIGIN + "/", inLanguage: "es", description: desc,
+      publisher: { "@type": "Organization", name: "Trujillo Mingorance / ATM Labs", url: "https://labs.trujillomingorance.com", email: "security@trujillomingorance.com" },
+      potentialAction: { "@type": "SearchAction", target: { "@type": "EntryPoint", urlTemplate: SITE_ORIGIN + "/?q={search_term_string}" }, "query-input": "required name=search_term_string" } },
+    { "@context": "https://schema.org", "@type": "WebApplication", name: "INVEST \u00b7 Comparador de activos", url: SITE_ORIGIN + "/comparar/", applicationCategory: "FinanceApplication",
+      operatingSystem: "Web", inLanguage: "es", isAccessibleForFree: true, offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" } }
+  ] : [{ "@context": "https://schema.org", "@type": "WebPage", name: title, description: desc, url: url, inLanguage: "es", isPartOf: site }];
+  const t = seoAttr(title), d = seoAttr(desc), img = SITE_ORIGIN + "/og-image.png";
+  const tags = [
+    '<link rel="canonical" href="' + url + '"/>',
+    path === "/confirmado/" ? '<meta name="robots" content="noindex, follow"/>' : '<meta name="robots" content="index, follow, max-image-preview:large"/>',
+    '<meta property="og:type" content="website"/>',
+    '<meta property="og:site_name" content="INVEST \u00b7 Trujillo Mingorance"/>',
+    '<meta property="og:locale" content="es_ES"/>',
+    '<meta property="og:locale:alternate" content="en_US"/>',
+    '<meta property="og:title" content="' + t + '"/>',
+    '<meta property="og:description" content="' + d + '"/>',
+    '<meta property="og:url" content="' + url + '"/>',
+    '<meta property="og:image" content="' + img + '"/>',
+    '<meta property="og:image:width" content="1200"/>',
+    '<meta property="og:image:height" content="630"/>',
+    '<meta property="og:image:alt" content="INVEST: comparador de acciones, ETF, \u00edndices y cripto"/>',
+    '<meta name="twitter:card" content="summary_large_image"/>',
+    '<meta name="twitter:title" content="' + t + '"/>',
+    '<meta name="twitter:description" content="' + d + '"/>',
+    '<meta name="twitter:image" content="' + img + '"/>'
+  ].concat(ld.map(seoLd)).join("\n");
+  return text.replace(anchor[0], anchor[0] + "\n" + tags);
+}
+
 const SITEMAP_PATHS = ["/", "/munger/", "/modelos/", "/glosario/", "/comparar/", "/suscribirse/", "/ensayos/redundancia-de-efectivo/", "/perfil/", "/aviso-legal/", "/privacidad/", "/cookies/"];
 function sitemapXml() {
   return '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
@@ -260,12 +316,14 @@ export default {
       const bin = Uint8Array.from(atob(ICON), (c) => c.charCodeAt(0));
       return new Response(bin, { headers: { "content-type": "image/png", "cache-control": "public, max-age=86400" } });
     }
+    if (url.pathname === "/og-image.png") return ogImage();
     if (url.pathname === "/sitemap.xml") return new Response(sitemapXml(), { headers: { "content-type": "application/xml; charset=utf-8", "cache-control": "public, max-age=3600" } });
     if (url.pathname === "/robots.txt") return new Response("User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /confirmado/\nSitemap: " + SITE_ORIGIN + "/sitemap.xml\n", { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=3600" } });
     if (url.pathname === "/api/subscribe/status") return json({ ok: true, enabled: subEnabled(env), sitekey: TURNSTILE_SITEKEY }, 200, "no-store");
     if (url.pathname === "/api/subscribe" || url.pathname === "/api/newsletter") return handleSubscribe(request, env);
     /*__CSS_ROUTE__*/
     if (url.pathname === "/api/quote") return handleQuote(request, url);
+    if (url.pathname === "/api/search") return handleSearch(request, url);
     if (url.pathname.startsWith("/api/")) return json({ ok: false, error: "not_found" }, 404);
     if (request.method !== "GET" && request.method !== "HEAD") return new Response("Not found", { status: 404 });
     let path = url.pathname;
