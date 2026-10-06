@@ -8,7 +8,10 @@
     "test": "node src/test-resolver.mjs && node src/test-worker-mocks.mjs"
   },
   "devDependencies": {
-    "esbuild": "0.24.2",
+    "esbuild": "0.28.2",
     "tailwindcss": "3.4.19"
+  },
+  "overrides": {
+    "postcss-selector-parser": "^7.1.6"
   }
 }
