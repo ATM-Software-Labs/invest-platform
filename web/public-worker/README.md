@@ -68,6 +68,10 @@ Endpoints: `POST /api/subscribe` (alias `/api/newsletter`), `GET /api/subscribe/
 4. Otherwise Yahoo search (retrying with accents removed and without spaces), ranked by type and venue
    (OTC, regional German, synthetic and CDR lines demoted), trying up to 3 candidates.
 
+Crypto found through the aliases or search is quoted in EUR (`BTC-EUR`, `ETH-EUR`, ...; `/api/search` also offers the
+EUR pair). If Yahoo has no EUR pair the USD pair is returned with `resolved.currencyFallback = { preferred: "EUR",
+currency: "USD" }`, which the home and comparador label as "sin par en EUR". An explicit `XYZ-USD` ticker is kept.
+
 Responses: `200` with `resolved` and `alternatives`; `404 not_found` with `suggestions`; `502 upstream_unavailable`
 (not cached) when Yahoo rate-limits or fails. Yahoo search responses are cached for a day in the Workers cache.
 

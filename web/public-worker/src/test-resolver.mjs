@@ -8,6 +8,10 @@ const CHARTS = {
   "ITX.MC": { symbol: "ITX.MC", shortName: "INDITEX", currency: "EUR", instrumentType: "EQUITY", regularMarketPrice: 50 },
   "BRK-B": { symbol: "BRK-B", shortName: "Berkshire Hathaway", currency: "USD", instrumentType: "EQUITY", regularMarketPrice: 500 },
   "BTC-USD": { symbol: "BTC-USD", shortName: "Bitcoin USD", currency: "USD", instrumentType: "CRYPTOCURRENCY", regularMarketPrice: 60000 },
+  "BTC-EUR": { symbol: "BTC-EUR", shortName: "Bitcoin EUR", currency: "EUR", instrumentType: "CRYPTOCURRENCY", regularMarketPrice: 55000 },
+  "LINK-USD": { symbol: "LINK-USD", shortName: "Chainlink USD", currency: "USD", instrumentType: "CRYPTOCURRENCY", regularMarketPrice: 20 },
+  "LINK-EUR": { symbol: "LINK-EUR", shortName: "Chainlink EUR", currency: "EUR", instrumentType: "CRYPTOCURRENCY", regularMarketPrice: 18 },
+  "FOO-USD": { symbol: "FOO-USD", shortName: "Foocoin USD", currency: "USD", instrumentType: "CRYPTOCURRENCY", regularMarketPrice: 0.5 },
   "IWDA.AS": { symbol: "IWDA.AS", shortName: "iShares Core MSCI World", currency: "EUR", instrumentType: "ETF", regularMarketPrice: 100 },
   "LDA.MC": { symbol: "LDA.MC", shortName: "LINEA DIRECTA", currency: "EUR", instrumentType: "EQUITY", regularMarketPrice: 1.2 },
   "0P0001.F": { symbol: "0P0001.F", currency: "EUR", instrumentType: "MUTUALFUND", regularMarketPrice: 10 }
@@ -18,6 +22,8 @@ const SEARCH = {
   IE00B4L5Y983: [{ symbol: "IWDA.AS", quoteType: "ETF", exchange: "AMS", shortname: "iShares Core MSCI World" }],
   "linea directa": [{ symbol: "LNDAF", quoteType: "EQUITY", exchange: "PNK" }, { symbol: "LDA.MC", quoteType: "EQUITY", exchange: "MCE" }],
   "LU0000000001": [{ symbol: "0P0001.F", quoteType: "MUTUALFUND", exchange: "FRA", shortname: "Fondo de prueba" }],
+  chainlink: [{ symbol: "LINK-USD", quoteType: "CRYPTOCURRENCY", exchange: "CCC", shortname: "Chainlink USD" }],
+  foocoin: [{ symbol: "FOO-USD", quoteType: "CRYPTOCURRENCY", exchange: "CCC", shortname: "Foocoin USD" }],
   nothing: [{ symbol: "XYZ261016C00510000", quoteType: "OPTION", exchange: "OPR" }]
 };
 let mode = "ok";
@@ -46,8 +52,12 @@ const cases = [
   ["Inditex", "ITX.MC", "alias"],       // Spanish name -> Madrid listing
   ["inditex ", "ITX.MC", "alias"],
   ["BRK.B", "BRK-B", "symbol"],         // share class mapping
-  ["BTC", "BTC-USD", "alias"],          // coin, not the US ETF
-  ["bitcoin", "BTC-USD", "alias"],
+  ["BTC", "BTC-EUR", "alias"],          // coin (in EUR), not the US ETF
+  ["bitcoin", "BTC-EUR", "alias"],
+  ["BTC-USD", "BTC-USD", "symbol"],     // an explicit USD pair is kept
+  ["chainlink", "LINK-EUR", "search"],  // coin found by search -> EUR pair
+  ["foocoin", "FOO-USD", "search"],     // no EUR pair -> USD fallback (flagged below)
+  ["FOO-EUR", "FOO-USD", "symbol"],     // EUR pair picked from suggestions but missing -> USD
   ["IWDA", "IWDA.AS", "search"],        // UCITS ETF without suffix; synthetic CXE line demoted
   ["IE00B4L5Y983", "IWDA.AS", "isin"],
   ["ie00b4l5y983", "IWDA.AS", "isin"],
@@ -59,6 +69,10 @@ for (const [q, sym, via] of cases) {
   assert.equal(body.quote.symbol, sym, q + " symbol");
   assert.equal(body.resolved.via, via, q + " via");
 }
+{ const { body } = await quote("bitcoin"); assert.equal(body.quote.currency, "EUR"); assert.equal(body.resolved.currencyFallback, undefined); }
+{ const { body } = await quote("foocoin"); assert.deepEqual(body.resolved.currencyFallback, { preferred: "EUR", currency: "USD" }, "USD fallback is labelled"); }
+{ const { body } = await quote("FOO-EUR"); assert.equal(body.resolved.currencyFallback.currency, "USD"); }
+{ const { body } = await quote("BTC-USD"); assert.equal(body.resolved.currencyFallback, undefined, "explicit USD pair is not a fallback"); }
 { const { body } = await quote("LU0000000001"); assert.equal(body.quote.name, "Fondo de prueba", "fund name from search"); }
 { const { status, body, cache } = await quote("nothing"); assert.equal(status, 404); assert.equal(body.error, "not_found"); assert.match(cache, /max-age=300/); }
 { const { status, body } = await quote("a"); assert.equal(status, 400); assert.equal(body.error, "too_short"); }
@@ -72,4 +86,10 @@ mode = "ok";
   assert.equal(r.status, 200);
   assert.equal(d.results[0].symbol, "ITX.MC");
 }
-console.log("resolver tests: " + (cases.length + 6) + " passed");
+{
+  const d = await (await worker.fetch(new Request("https://invest.example/api/search?q=bitcoin"), {})).json();
+  assert.equal(d.results[0].symbol, "BTC-EUR", "alias suggestion is the EUR pair");
+  const c = await (await worker.fetch(new Request("https://invest.example/api/search?q=chainlink"), {})).json();
+  assert.equal(c.results[0].symbol, "LINK-EUR", "searched coins are offered in EUR");
+}
+console.log("resolver tests: " + (cases.length + 12) + " passed");

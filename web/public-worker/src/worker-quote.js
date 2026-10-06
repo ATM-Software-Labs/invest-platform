@@ -176,14 +176,15 @@ const ALIASES = (function () {
   add("^FTSE", ["ftse", "ftse 100", "ftse100"]);
   add("^N225", ["nikkei", "nikkei 225", "nikkei225"]);
   add("^VIX", ["vix"]);
-  // Crypto (the plain tickers BTC/ETH are also US ETFs on Yahoo; a retail search for "BTC" means the coin)
-  add("BTC-USD", ["btc", "bitcoin", "xbt"]);
-  add("ETH-USD", ["eth", "ethereum", "ether"]);
-  add("SOL-USD", ["solana"]);
-  add("XRP-USD", ["xrp", "ripple"]);
-  add("ADA-USD", ["cardano"]);
-  add("DOGE-USD", ["doge", "dogecoin"]);
-  add("BNB-USD", ["bnb", "binance coin"]);
+  // Crypto (the plain tickers BTC/ETH are also US ETFs on Yahoo; a retail search for "BTC" means the coin).
+  // Quoted in EUR; resolveQuote falls back to the -USD pair when Yahoo has no EUR pair.
+  add("BTC-EUR", ["btc", "bitcoin", "xbt"]);
+  add("ETH-EUR", ["eth", "ethereum", "ether"]);
+  add("SOL-EUR", ["solana"]);
+  add("XRP-EUR", ["xrp", "ripple"]);
+  add("ADA-EUR", ["cardano"]);
+  add("DOGE-EUR", ["doge", "dogecoin"]);
+  add("BNB-EUR", ["bnb", "binance coin"]);
   // Commodities and FX
   add("GC=F", ["oro", "gold", "xau", "xauusd", "xau/usd", "oro spot"]);
   add("SI=F", ["plata", "silver", "xag", "xagusd", "xag/usd"]);
@@ -248,6 +249,12 @@ const EXCHANGE_TIER = {
   PNK: 3, OQX: 3, OQB: 3, OEM: 3, OGM: 3, HAN: 3, HAM: 3, FRA: 3, MUN: 3, STU: 3, DUS: 3, BER: 3, CXE: 3, DXE: 3, CXA: 3, NEO: 3, TLO: 3,
   IOB: 3, MEX: 3, BUE: 3, AQS: 3, SAO: 3, SGO: 3, BVC: 3, WSE: 3
 };
+
+// Crypto pairs on Yahoo look like "BTC-USD" / "BTC-EUR". Returns the coin ("BTC") or null.
+function cryptoBase(sym) {
+  const m = /^([A-Z0-9]{2,15})-(USD|EUR)$/.exec(typeof sym === "string" ? sym : "");
+  return m ? m[1] : null;
+}
 
 function fold(s) {
   return String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
@@ -362,16 +369,33 @@ async function resolveQuote(raw) {
     tried[sym] = true;
     return chartQuote(sym, state);
   };
-  const done = function (quote, via, alternatives) {
+  const done = function (quote, via, alternatives, eurFallback) {
     const cand = (alternatives || []).find(function (c) { return c.symbol === quote.symbol; });
     if (cand && cand.name && (!quote.name || quote.name === quote.symbol)) quote.name = cand.name;
-    return { quote: quote, resolved: { query: q, symbol: quote.symbol || null, via: via }, alternatives: (alternatives || []).filter(function (c) { return c.symbol !== quote.symbol; }).slice(0, 4) };
+    const resolved = { query: q, symbol: quote.symbol || null, via: via };
+    // No EUR pair for this coin: the price stays in USD and the client labels it.
+    if (eurFallback) resolved.currencyFallback = { preferred: "EUR", currency: quote.currency || "USD" };
+    const base = cryptoBase(quote.symbol);
+    return { quote: quote, resolved: resolved, alternatives: (alternatives || []).filter(function (c) { return c.symbol !== quote.symbol && !(base && cryptoBase(c.symbol) === base); }).slice(0, 4) };
+  };
+  // Coins found by name or search: EUR pair first, USD pair as a labelled fallback.
+  const tryCrypto = async function (base) {
+    const eur = await tryChart(base + "-EUR");
+    if (eur) return { quote: eur, fallback: false };
+    const usd = await tryChart(base + "-USD");
+    return usd ? { quote: usd, fallback: true } : null;
   };
 
   const alias = ALIASES[folded];
   if (alias) {
-    const quote = await tryChart(alias);
-    if (quote) return done(quote, "alias");
+    const coin = cryptoBase(alias);
+    if (coin) {
+      const got = await tryCrypto(coin);
+      if (got) return done(got.quote, "alias", null, got.fallback);
+    } else {
+      const quote = await tryChart(alias);
+      if (quote) return done(quote, "alias");
+    }
   }
 
   const compact = upper.replace(/\s+/g, "");
@@ -388,6 +412,12 @@ async function resolveQuote(raw) {
   if (tickerish) {
     let quote = await tryChart(upper);
     if (quote) return done(quote, "symbol");
+    // "XYZ-EUR" picked from the suggestions but Yahoo only has the USD pair.
+    const eurPair = upper.match(/^([A-Z0-9]{2,15})-EUR$/);
+    if (eurPair) {
+      quote = await tryChart(eurPair[1] + "-USD");
+      if (quote) return done(quote, "symbol", null, true);
+    }
     // Share classes: BRK.B / BF.B are BRK-B / BF-B on Yahoo.
     const cls = upper.match(/^([A-Z]{1,6})[.\/]([A-C])$/);
     if (cls) {
@@ -402,6 +432,12 @@ async function resolveQuote(raw) {
     if (charts >= MAX_CHART_TRIES) break;
     if (tried[c.symbol]) continue;
     charts++;
+    const coin = c.type === "CRYPTOCURRENCY" ? cryptoBase(c.symbol) : null;
+    if (coin) {
+      const got = await tryCrypto(coin);
+      if (got) return done(got.quote, "search", cands, got.fallback);
+      continue;
+    }
     const quote = await tryChart(c.symbol);
     if (quote) return done(quote, "search", cands);
   }
@@ -445,7 +481,11 @@ async function handleSearch(request, url) {
   if (ALIASES[folded]) push({ symbol: ALIASES[folded], name: q, exchange: null, type: "ALIAS" });
   const compact = q.toUpperCase().replace(/\s+/g, "");
   const cands = await searchCandidates(isIsin(compact) ? compact : q, state);
-  cands.forEach(push);
+  // Coins are offered as their EUR pair (the quote endpoint falls back to USD if Yahoo has none).
+  cands.forEach(function (c) {
+    const coin = c.type === "CRYPTOCURRENCY" ? cryptoBase(c.symbol) : null;
+    push(coin ? { symbol: coin + "-EUR", name: c.name, exchange: c.exchange, type: c.type } : c);
+  });
   if (!results.length && state.upstreamError) return json({ ok: false, error: "upstream_unavailable", results: [] }, 502, "no-store");
   return json({ ok: true, results: results.slice(0, 8) }, 200, SEARCH_CACHE);
 }

@@ -409,6 +409,7 @@
     var priceBox = el("div", "rounded-xl border border-line bg-bg p-3");
     priceBox.appendChild(el("p", "font-sans text-[10px] uppercase tracking-wide text-dim", t("price")));
     priceBox.appendChild(el("p", "mt-1 font-mono tabular-nums text-lg text-ink", fmtPrice(quote.regularMarketPrice, quote.currency)));
+    if (data.resolved && data.resolved.currencyFallback) priceBox.appendChild(el("p", "mt-1 font-sans text-[11px] text-dim", lang() === "en" ? "No EUR pair at the source; price in " + (quote.currency || "USD") + "." : "Sin par en EUR en la fuente; precio en " + (quote.currency || "USD") + "."));
     priceGrid.appendChild(priceBox);
     var chBox = el("div", "rounded-xl border border-line bg-bg p-3");
     chBox.appendChild(el("p", "font-sans text-[10px] uppercase tracking-wide text-dim", t("change")));
