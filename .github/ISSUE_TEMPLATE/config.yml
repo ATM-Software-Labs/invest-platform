@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Vulnerabilidad de seguridad
+    url: mailto:security@trujillomingorance.com
+    about: Informa de vulnerabilidades de forma privada, no en un issue público.
+  - name: Web de INVEST
+    url: https://invest.trujillomingorance.com
+    about: Comparador de activos y consulta en producción.

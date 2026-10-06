@@ -1,88 +1,163 @@
-# invest-platform
+<p align="center">
+  <img src="docs/og-image.png" alt="INVEST: comparador de acciones, ETF, índices y cripto" width="720">
+</p>
 
-Backend institucional de `subdomain.yourdomain.com`.
+# INVEST · Comparador de activos e investigación de inversiones
 
-Recibe cualquier identificador global (acciones, cripto, bonos soberanos, FX y materias primas), consulta EODHD / Financial Modeling Prep / OpenBB, normaliza estados financieros entre IFRS y US GAAP, y entrega un payload único tipado para el motor cuantitativo.
+**INVEST** es una plataforma abierta de **investigación y comparación de inversiones**: consulta y compara
+**acciones, ETF, índices, criptomonedas y materias primas** por **ticker, nombre o ISIN**, con **cotizaciones**,
+cifras de los informes anuales **10-K de la SEC**, un **checklist Munger** transparente y el boletín
+**Markets Digest**.
 
-## Contrato
+🌐 **Web:** <https://invest.trujillomingorance.com> · **Comparador:** <https://invest.trujillomingorance.com/comparar/>
 
-```
-GET /api/v1/asset/:identifier
-GET /api/v1/asset?identifier=EUR/USD
-GET /api/v1/resolve/:identifier
-GET /api/v1/score/:identifier
-GET /api/v1/analysis/:identifier
-POST /api/v1/analysis/:identifier
-GET /health
-```
+> ⚠️ Información general y educativa. **No es asesoramiento financiero** ni una recomendación personalizada
+> (ver [Aviso](#aviso-legal)).
 
-`UnifiedAssetPayload` está discriminado por `assetClass`: `equity` | `crypto` | `bond` | `forex`.
+<p align="center"><img src="docs/comparador.png" alt="Comparador de activos de INVEST" width="820"></p>
 
-## Resolución
+**English summary.** INVEST is an open investment research and asset comparison platform (Spanish-first).
+Look up and compare stocks, ETFs, indices, crypto and commodities by ticker, company name or ISIN, with live
+quotes, SEC 10-K figures, a transparent Munger checklist and the *Markets Digest* newsletter. The public site
+runs on a Cloudflare Worker; the repo also contains a TypeScript market-data backend (Fastify / Workers) and a
+Next.js terminal. General information only, not financial advice.
 
-| Entrada | Clase | Notas |
-|---|---|---|
-| `MSFT`, `BRK.B`, `NVDA` | equity US | NYSE/NASDAQ |
-| `IDR.MC`, `RHM.DE`, `RR.L` | equity EU | LSE en GBX → GBP / 100 |
-| `7203.T`, `9988.HK`, `2330.TW` | equity Asia | ADR USD enlazado cuando existe |
-| `BTC`, `ETH`, `SOL` | crypto | vs USD/EUR |
-| `US10Y`, `US02Y`, `BUND10Y`, `BONO10Y` | bond | TIR, spread vs UST 10Y, duración |
-| `EUR/USD`, `XAU/USD`, `PPFB.DE` | forex / ETP | ETP de oro listado como equity `physical_etp` |
+## Funcionalidades
 
-## Normalización contable
+- **Comparador de activos** (`/comparar/`): 2 o 3 activos lado a lado (precio, mercado, tipo, ingresos,
+  resultado neto, márgenes, flujo de caja libre, efectivo y deuda). Sin ranking ni recomendaciones.
+- **Búsqueda tolerante**: tickers (`AAPL`, `SAN.MC`, `BRK.B`), nombres en castellano o inglés, con o sin tildes
+  (`Inditex`, `telefónica`, `apple`), **ISIN** (`IE00B4L5Y983`, `US0378331005`), ETF UCITS sin sufijo
+  (`VWCE`, `IWDA`, `CSPX`), índices (`S&P 500`, `IBEX 35`), cripto (`BTC`, `bitcoin`) y materias primas
+  (`oro`, `brent`). Sugerencias mientras escribes.
+- **Consulta y checklist Munger**: margen neto ≥ 15 %, margen FCF ≥ 10 % y efectivo ≥ deuda a largo plazo,
+  calculados solo con cifras 10-K (no se inventan datos).
+- **Modelos mentales, glosario y ensayos** educativos.
+- **Markets Digest / INVEST Notas**: suscripción con doble opt-in (Brevo), Cloudflare Turnstile, honeypot y
+  límite de peticiones.
+- **SEO**: títulos y descripciones por página, canonical, Open Graph, Twitter card, JSON-LD, `sitemap.xml`
+  y `robots.txt`.
 
-- **FCF real** = Operating Cash Flow − Capex. Si el estándar es IFRS 16, se restan también los lease payments (el OCF IFRS no es comparable al US GAAP).
-- **Ratios adimensionales** (ROIC, ROE, márgenes, Net Debt/EBITDA) se calculan siempre en la moneda de reporte. No hay conversión FX previa.
-- **Dilución neta** a 1/3/5 años sobre diluted shares, más SBC / FCF.
-- **Deuda financiera neta** = deuda financiera (leases segregados) − caja − inversiones a corto.
+## Arquitectura
 
-Si faltan trimestres, el servicio construye TTM con cuatro trimestres consecutivos o cae al último anual completo y lo declara en `dataQuality.fallbacksUsed`.
+| Componente | Ruta | Qué hace | Despliegue |
+| --- | --- | --- | --- |
+| **Web pública** (en producción) | [`web/public-worker/`](web/public-worker/README.md) | Páginas pre-renderizadas, `/api/quote`, `/api/search`, `/api/subscribe`, sitemap/robots. Un único módulo ES generado en `dist/worker.js`. | Cloudflare Worker `invest` (ruta `invest.trujillomingorance.com/*`) |
+| Backend de datos de mercado | `src/` | Resolución global de identificadores, normalización IFRS/US GAAP, scoring determinista y síntesis cualitativa con LLM (EODHD → FMP → OpenBB → fixtures). | Node (Fastify, Docker) o edge (`src/edge/`, `functions/`) |
+| Terminal Next.js | `web/` | UI tipo terminal (React 19 / Next.js 15) sobre el backend. | Exportación estática + Worker con assets (`wrangler.toml` raíz) |
 
-## Arranque
+Datos de la web pública: cotizaciones y búsqueda de símbolos de **Yahoo Finance**, cifras anuales de **SEC EDGAR
+(XBRL 10-K)**. Las respuestas de error distinguen «sin resultado» de «fuente de datos no disponible».
+
+> ℹ️ El `wrangler.toml` de la raíz también apunta al Worker `invest` y a la misma ruta. **No lo despliegues** sin
+> querer sustituir la web pública: hoy producción sirve el bundle de `web/public-worker/`.
+
+## Puesta en marcha
+
+Requisitos: Node.js ≥ 20 (22 recomendado) y npm.
 
 ```bash
+# Web pública (Worker)
+cd web/public-worker
+npm ci
+cp build.local.env.example build.local.env   # TURNSTILE_SITEKEY (clave pública del widget)
+npm run build                                # -> dist/worker.js
+npm test                                     # resolución de símbolos + smoke test con mocks
+npx wrangler dev -c wrangler.toml            # tras copiar wrangler.example.toml (ver abajo)
+
+# Backend
 cp .env.example .env
 npm install
 npm test
-npm run dev
+npm run dev                                  # http://127.0.0.1:8787
+
+# Terminal Next.js
+cd web && npm install && npm run dev         # http://127.0.0.1:3000
 ```
 
-Sin claves de vendor el servicio responde con fixtures deterministas de los identificadores del spec (`ENABLE_DEMO_FIXTURES=true`). En producción configura al menos `EODHD_API_TOKEN` o `FMP_API_KEY`. Redis es opcional; si `REDIS_URL` no está definido se usa LRU en proceso.
+Sin claves de proveedores el backend responde con fixtures deterministas (`ENABLE_DEMO_FIXTURES=true`).
+También: `docker compose up --build`.
+
+## Variables de entorno
+
+### Web pública (`web/public-worker`)
+
+| Nombre | Tipo | Uso |
+| --- | --- | --- |
+| `SUBSCRIBERS` | KV | Límite de peticiones, enfriamiento por correo e ids de Brevo en caché (`<KV_NAMESPACE_ID>`). |
+| `BREVO_API_KEY` | secreto | Necesario para activar el formulario de suscripción. |
+| `TURNSTILE_SECRET` | secreto | Verificación de Turnstile en el servidor. |
+| `TURNSTILE_SITEKEY` | build | Clave pública de Turnstile (se incrusta en el bundle). |
+| `BREVO_LIST_MARKETS`, `BREVO_LIST_INVEST` | var | Ids de las listas «Markets Digest» e «INVEST Notas» (si faltan, se buscan o crean por nombre). |
+| `DOI_REPLY_TO` | var | Reply-To de la plantilla de doble opt-in (solo al crearla). |
+| `BREVO_DOI_TEMPLATE_ID` | var, opcional | Fija la plantilla de doble opt-in. |
+| `SUB_TEST_TOKEN` + `SUB_TEST_EMAIL` | temporal | Prueba extremo a extremo sin Turnstile; bórralos tras la prueba. |
+
+Plantillas sin valores reales: [`wrangler.example.toml`](web/public-worker/wrangler.example.toml),
+[`.dev.vars.example`](web/public-worker/.dev.vars.example) y
+[`build.local.env.example`](web/public-worker/build.local.env.example).
+
+### Backend (`.env`, ver [`.env.example`](.env.example))
+
+`PORT`, `HOST`, `LOG_LEVEL`, `EODHD_API_TOKEN`, `FMP_API_KEY`, `OPENBB_BASE_URL`, `OPENBB_API_KEY`, `REDIS_URL`
+(opcional), `CACHE_TTL_*`, `ENABLE_DEMO_FIXTURES`, `HTTP_TIMEOUT_MS`, `HTTP_RETRIES`, `XAI_API_KEY`, `XAI_MODEL`,
+`XAI_BASE_URL`, `XAI_TIMEOUT_MS` y `RESEND_API_KEY` (`POST /api/newsletter`; sin ella responde 503).
+
+Nunca subas claves al repositorio: `.env`, `.dev.vars`, `wrangler.toml` local y `build.local.env` están en
+`.gitignore`.
+
+## Despliegue
+
+**Web pública** (Cloudflare Worker `invest`):
 
 ```bash
-docker compose up --build
+cd web/public-worker
+cp wrangler.example.toml wrangler.toml        # rellena KV, vars y compatibility_date (no se sube a git)
+npx wrangler secret put BREVO_API_KEY -c wrangler.toml
+npx wrangler secret put TURNSTILE_SECRET -c wrangler.toml
+npm ci && npm run build && npx wrangler deploy -c wrangler.toml
 ```
 
-Cadena de vendors: **EODHD → FMP → OpenBB → fixtures**. Los parciales se fusionan. Caché: 12 h fundamentales, 60 s cotizaciones de renta variable vía TTL de clase de activo (cripto 120 s, macro 300 s).
+**Backend:** `npm run build && npm start` o la imagen Docker (`Dockerfile`, puerto 8787).
 
-## Scoring determinista + LLM cualitativo
+## API pública
 
-El LLM **no calcula**. `InvestorScoringEngine` produce afinidad 0–100 para Buffett, Burry, Dalio y tesis monetaria dura, más bandas de fair value a múltiplos de FCF 12× / 18× / 25×. El orquestador envía solo esos hechos a Grok (`XAI_API_KEY`, modelo `grok-4.6`) con JSON Schema estricto y fusiona la narrativa con los números del motor.
+| Endpoint | Descripción |
+| --- | --- |
+| `GET /api/quote?q=<ticker, nombre o ISIN>` | Cotización + cifras 10-K. Incluye `resolved` (cómo se interpretó la consulta) y `alternatives`. `404 not_found` con `suggestions`, `502 upstream_unavailable` si la fuente falla. |
+| `GET /api/search?q=` | Sugerencias de símbolos (alias, nombres, ISIN). |
+| `POST /api/subscribe` · `GET /api/subscribe/status` | Suscripción con doble opt-in. |
 
-```bash
-curl http://127.0.0.1:8787/api/v1/score/MSFT
-curl http://127.0.0.1:8787/api/v1/analysis/MSFT?qualitative=false
-curl -X POST http://127.0.0.1:8787/api/v1/analysis/TEST \
-  -H "Content-Type: application/json" \
-  -d '{"qualitative":false,"enrichment":{"priceToTangibleBook":0.9,"shortInterestPercent":0.12,"visibleDeleveragingCatalyst":true}}'
+Backend: `GET /api/v1/asset/:identifier`, `/api/v1/resolve/:identifier`, `/api/v1/score/:identifier`,
+`/api/v1/analysis/:identifier`, `/api/v1/search?q=`, `/api/v1/universe`, `POST /api/newsletter`, `GET /health`.
+
+## Estructura del proyecto
+
+```
+.
+├── web/public-worker/   Web pública (Cloudflare Worker): src/ (páginas, scripts, worker) y build.mjs
+├── src/                 Backend TypeScript: providers, domain, scoring, llm, routes, edge
+├── web/                 Terminal Next.js (app/, components/, lib/)
+├── functions/           Cloudflare Pages Functions que reutilizan src/edge
+├── tests/               Tests del backend (Vitest)
+├── scripts/             Utilidades (snapshot de símbolos)
+└── docs/                Imágenes del README y de Open Graph
 ```
 
-## Terminal (Next.js 19 / React 19)
+## Aviso legal
 
-```bash
-cd web
-npm install
-npm run dev
-```
+INVEST publica **información general y educativa** sobre instrumentos financieros a partir de fuentes públicas.
+**No constituye asesoramiento en materia de inversión**, recomendación personalizada ni oferta, en el sentido de
+la Directiva 2014/65/UE (**MiFID II**) y de la Ley 6/2023 de los Mercados de Valores y de los Servicios de
+Inversión. El titular **no está registrado en la CNMV** como empresa de servicios de inversión. Las
+rentabilidades pasadas no garantizan rentabilidades futuras; puedes perder todo el capital invertido. Los datos
+pueden estar retrasados, incompletos o ser erróneos.
 
-UI en `http://127.0.0.1:3000`. El backend debe estar en `:8787`. Atajo `Cmd+K` / `Ctrl+K` para el buscador global. Vista principal: `web/components/InvestAssetView.tsx`.
+## Licencia
 
-Producción (Cloudflare Worker + assets, ruta de zona sobre el DNS comodín):
+[MIT](LICENSE) © 2026 Alberto Trujillo Mingorance. Las marcas y datos de terceros pertenecen a sus titulares.
 
-```bash
-npm run deploy
-```
+## Contacto
 
-Host: [subdomain.yourdomain.com](https://subdomain.yourdomain.com)
-
-
+- General: [soporte@trujillomingorance.com](mailto:soporte@trujillomingorance.com)
+- Seguridad: [security@trujillomingorance.com](mailto:security@trujillomingorance.com) (ver [SECURITY.md](SECURITY.md))
