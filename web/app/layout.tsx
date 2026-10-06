@@ -16,9 +16,9 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "INVEST · Mesa de 50 empresas",
+  title: "INVEST",
   description:
-    "Información general sobre sociedades cotizadas: logotipos, seis números en castellano y un semáforo de fundamentales. No es asesoramiento en materia de inversión.",
+    "Información general de mercado y notas entre semana. No es asesoramiento en materia de inversión.",
   icons: { icon: "/favicon.png", apple: "/favicon.png" },
 };
 

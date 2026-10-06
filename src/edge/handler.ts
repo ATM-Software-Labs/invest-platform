@@ -22,6 +22,7 @@ export interface EdgeEnv {
   XAI_API_KEY?: string;
   XAI_MODEL?: string;
   XAI_BASE_URL?: string;
+  RESEND_API_KEY?: string;
   ASSETS?: { fetch: (input: Request | URL) => Promise<Response> };
 }
 
@@ -90,6 +91,11 @@ export async function handleApi(request: Request, env: EdgeEnv): Promise<Respons
   try {
     const url = new URL(request.url);
     const rest = remainder(url.pathname);
+
+    if (rest === "newsletter") {
+      return handleNewsletter(request, env);
+    }
+
     const { assets, analysis } = services(env);
     const qualitative = url.searchParams.get("qualitative") === "true" || url.searchParams.get("qualitative") === "1";
     const refresh = url.searchParams.get("refresh") === "true" || url.searchParams.get("refresh") === "1";
@@ -219,3 +225,75 @@ function prettyAssetId(pathname: string): string | null {
     return rest;
   }
 }
+
+function resendApiKey(env: EdgeEnv): string {
+  const fromBinding = typeof env.RESEND_API_KEY === "string" ? env.RESEND_API_KEY.trim() : "";
+  if (fromBinding) return fromBinding;
+  const fromProcess = typeof process !== "undefined" && typeof process.env?.RESEND_API_KEY === "string"
+    ? process.env.RESEND_API_KEY.trim()
+    : "";
+  return fromProcess;
+}
+
+function normalizeEmail(input: unknown): string | null {
+  if (typeof input !== "string") return null;
+  const email = input.trim().toLowerCase();
+  if (!email || email.length > 254) return null;
+  const at = email.indexOf("@");
+  if (at <= 0 || at !== email.lastIndexOf("@")) return null;
+  const local = email.slice(0, at);
+  const domain = email.slice(at + 1);
+  if (!local || local.length > 64 || !domain || domain.length > 253) return null;
+  if (local.startsWith(".") || local.endsWith(".") || local.includes("..")) return null;
+  if (!/^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+$/i.test(local)) return null;
+  if (!/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i.test(domain)) return null;
+  return email;
+}
+
+function newsletterJson(data: { ok: boolean; error?: string }, status: number): Response {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "access-control-allow-origin": "*",
+    },
+  });
+}
+
+export async function handleNewsletter(request: Request, env: EdgeEnv): Promise<Response> {
+  if (request.method !== "POST") {
+    return newsletterJson({ ok: false, error: "method_not_allowed" }, 405);
+  }
+
+  let body: { email?: unknown } = {};
+  try {
+    body = (await request.json()) as { email?: unknown };
+  } catch {
+    return newsletterJson({ ok: false, error: "invalid_email" }, 400);
+  }
+
+  const email = normalizeEmail(body?.email);
+  if (!email) return newsletterJson({ ok: false, error: "invalid_email" }, 400);
+
+  const apiKey = resendApiKey(env);
+  if (!apiKey) return newsletterJson({ ok: false, error: "not_configured" }, 503);
+
+  try {
+    const upstream = await fetch("https://api.resend.com/contacts", {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${apiKey}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ email, unsubscribed: false }),
+    });
+    if (upstream.ok || upstream.status === 409) {
+      return newsletterJson({ ok: true }, 200);
+    }
+    return newsletterJson({ ok: false, error: "upstream" }, 502);
+  } catch {
+    return newsletterJson({ ok: false, error: "upstream" }, 502);
+  }
+}
+

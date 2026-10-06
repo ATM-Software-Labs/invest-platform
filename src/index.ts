@@ -13,6 +13,7 @@ import { registerHealthRoute } from "./routes/health.js";
 import { AnalysisService } from "./services/analysis-service.js";
 import { AssetService } from "./services/asset-service.js";
 import { AssetError } from "./types/index.js";
+import { handleNewsletter } from "./edge/handler.js";
 
 export async function buildServer() {
   const config = loadConfig();
@@ -69,6 +70,17 @@ export async function buildServer() {
   await registerAssetRoutes(app, service);
   await registerAnalysisRoutes(app, analysis);
 
+  app.post("/api/newsletter", async (req, reply) => {
+    const request = new Request("http://127.0.0.1/api/newsletter", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(req.body ?? {}),
+    });
+    const res = await handleNewsletter(request, { RESEND_API_KEY: process.env.RESEND_API_KEY });
+    reply.header("cache-control", "no-store");
+    return reply.status(res.status).send(await res.json());
+  });
+
   app.get("/", async () => ({
     name: "invest-platform",
     version: "1.0.0",
@@ -81,6 +93,7 @@ export async function buildServer() {
       universe: "GET /api/v1/universe",
       directory: "GET /api/v1/directory",
       search: "GET /api/v1/search?q=",
+      newsletter: "POST /api/newsletter",
     },
   }));
 
