@@ -28,7 +28,7 @@ Next.js terminal. General information only, not financial advice.
   resultado neto, márgenes, flujo de caja libre, efectivo y deuda). Sin ranking ni recomendaciones.
 - **Búsqueda tolerante**: tickers (`AAPL`, `SAN.MC`, `BRK.B`), nombres en castellano o inglés, con o sin tildes
   (`Inditex`, `telefónica`, `apple`), **ISIN** (`IE00B4L5Y983`, `US0378331005`), ETF UCITS sin sufijo
-  (`VWCE`, `IWDA`, `CSPX`), índices (`S&P 500`, `IBEX 35`), cripto (`BTC`, `bitcoin`) y materias primas
+  (`VWCE`, `IWDA`, `CSPX`), índices (`S&P 500`, `IBEX 35`), cripto (`BTC`, `bitcoin`; precio en EUR cuando existe el par, si no en USD indicado) y materias primas
   (`oro`, `brent`). Sugerencias mientras escribes.
 - **Consulta y checklist Munger**: margen neto ≥ 15 %, margen FCF ≥ 10 % y efectivo ≥ deuda a largo plazo,
   calculados solo con cifras 10-K (no se inventan datos).
@@ -44,13 +44,15 @@ Next.js terminal. General information only, not financial advice.
 | --- | --- | --- | --- |
 | **Web pública** (en producción) | [`web/public-worker/`](web/public-worker/README.md) | Páginas pre-renderizadas, `/api/quote`, `/api/search`, `/api/subscribe`, sitemap/robots. Un único módulo ES generado en `dist/worker.js`. | Cloudflare Worker `invest` (ruta `invest.trujillomingorance.com/*`) |
 | Backend de datos de mercado | `src/` | Resolución global de identificadores, normalización IFRS/US GAAP, scoring determinista y síntesis cualitativa con LLM (EODHD → FMP → OpenBB → fixtures). | Node (Fastify, Docker) o edge (`src/edge/`, `functions/`) |
-| Terminal Next.js | `web/` | UI tipo terminal (React 19 / Next.js 15) sobre el backend. | Exportación estática + Worker con assets (`wrangler.toml` raíz) |
+| Terminal Next.js | `web/` | UI tipo terminal (React 19 / Next.js 15) sobre el backend. | Exportación estática + Worker con assets ([`wrangler.example.toml`](wrangler.example.toml) raíz, solo plantilla) |
 
 Datos de la web pública: cotizaciones y búsqueda de símbolos de **Yahoo Finance**, cifras anuales de **SEC EDGAR
 (XBRL 10-K)**. Las respuestas de error distinguen «sin resultado» de «fuente de datos no disponible».
 
-> ℹ️ El `wrangler.toml` de la raíz también apunta al Worker `invest` y a la misma ruta. **No lo despliegues** sin
-> querer sustituir la web pública: hoy producción sirve el bundle de `web/public-worker/`.
+> ℹ️ Producción sirve el bundle de `web/public-worker/`. En la raíz solo hay una plantilla,
+> [`wrangler.example.toml`](wrangler.example.toml), con nombre y ruta de ejemplo: un `wrangler deploy` en la raíz no
+> puede sobrescribir el Worker `invest`. Para publicar el terminal Next.js, cópiala a `wrangler.toml` (ignorado por
+> git) con **otro** nombre de Worker y ruta, y ejecuta `npm run deploy:terminal`.
 
 ## Puesta en marcha
 
@@ -117,6 +119,9 @@ npx wrangler secret put BREVO_API_KEY -c wrangler.toml
 npx wrangler secret put TURNSTILE_SECRET -c wrangler.toml
 npm ci && npm run build && npx wrangler deploy -c wrangler.toml
 ```
+
+**Terminal Next.js** (opcional, no es la web de producción): `cp wrangler.example.toml wrangler.toml`, pon un nombre
+de Worker y una ruta propios y ejecuta `npm run deploy:terminal`.
 
 **Backend:** `npm run build && npm start` o la imagen Docker (`Dockerfile`, puerto 8787).
 

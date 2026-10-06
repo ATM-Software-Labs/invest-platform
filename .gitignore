@@ -9,3 +9,6 @@ coverage/
 .wrangler/
 .dev.vars
 *.bak
+*.tsbuildinfo
+# Local copy of wrangler.example.toml (real names/routes stay out of git)
+/wrangler.toml

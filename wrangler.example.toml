@@ -1,0 +1,26 @@
+# Template for the Next.js terminal (web/) served as static assets by src/edge/worker.ts.
+#
+# This is NOT the production site: invest.trujillomingorance.com is served by the Worker built from
+# web/public-worker/ (see web/public-worker/README.md). To deploy the terminal, copy this file to
+# wrangler.toml (git-ignored), pick your own Worker name and route, and run `npm run deploy:terminal`.
+# Do not reuse the name "invest" or the invest.trujillomingorance.com route: that would replace the live site.
+name = "<WORKER_NAME>"
+main = "src/edge/worker.ts"
+compatibility_date = "<YYYY-MM-DD>"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+
+[assets]
+directory = "./web/out"
+binding = "ASSETS"
+html_handling = "auto-trailing-slash"
+not_found_handling = "404-page"
+
+[vars]
+ENABLE_DEMO_FIXTURES = "true"
+ENABLE_LIVE_QUOTES = "true"
+ENVIRONMENT = "production"
+
+# [[routes]]
+# pattern = "<HOSTNAME>/*"
+# zone_name = "<ZONE_NAME>"

@@ -16,7 +16,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "dev:web": "npm --prefix web run dev",
     "build:web": "npm --prefix web run build",
-    "deploy": "npm --prefix web run build && npx wrangler deploy"
+    "deploy:terminal": "test -f wrangler.toml || { echo 'Copy wrangler.example.toml to wrangler.toml and set your own Worker name/route first (not the live invest worker).'; exit 1; } && npm --prefix web run build && npx wrangler deploy -c wrangler.toml"
   },
   "keywords": [
     "fintech",
