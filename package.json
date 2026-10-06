@@ -9,14 +9,14 @@
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && npm --prefix web/public-worker ci && npm --prefix web/public-worker run build",
     "start": "node dist/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "dev:web": "npm --prefix web run dev",
     "build:web": "npm --prefix web run build",
-    "deploy:terminal": "test -f wrangler.toml || { echo 'Copy wrangler.example.toml to wrangler.toml and set your own Worker name/route first (not the live invest worker).'; exit 1; } && npm --prefix web run build && npx wrangler deploy -c wrangler.toml"
+    "deploy:terminal": "test -f wrangler.terminal.toml || { echo 'Copy wrangler.example.toml to wrangler.terminal.toml and set your own Worker name/route first (not the live invest worker).'; exit 1; } && npm --prefix web run build && npx wrangler deploy -c wrangler.terminal.toml"
   },
   "keywords": [
     "fintech",

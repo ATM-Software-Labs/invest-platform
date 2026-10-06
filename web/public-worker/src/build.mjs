@@ -14,16 +14,16 @@ const D = path.dirname(fileURLToPath(import.meta.url)); // web/public-worker/src
 const ROOT = path.resolve(D, "..");
 const OUT = path.join(ROOT, "dist");
 fs.mkdirSync(OUT, { recursive: true });
-const read = (f) => fs.readFileSync(D + "/" + f, "utf8");
+const read = (f) => fs.readFileSync(D + "/" + f, "utf8").replace(/\r\n/g, "\n");
 // Optional untracked file with build-time values (KEY=value per line), e.g. TURNSTILE_SITEKEY.
 const localEnv = path.join(ROOT, "build.local.env");
 if (fs.existsSync(localEnv)) for (const line of fs.readFileSync(localEnv, "utf8").split(/\r?\n/)) {
   const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/);
   if (m && !(m[1] in process.env)) process.env[m[1]] = m[2].replace(/^["']|["']$/g, "");
 }
-// Public Turnstile site key (the secret lives only in the Worker secret TURNSTILE_SECRET).
-const TURNSTILE_SITEKEY = process.env.TURNSTILE_SITEKEY || "<TURNSTILE_SITEKEY>";
-if (!process.env.TURNSTILE_SITEKEY) console.warn("WARNING: TURNSTILE_SITEKEY not set; the subscribe widget will not work.");
+// Public Turnstile site key for invest.trujillomingorance.com (the secret stays in TURNSTILE_SECRET).
+// Workers Builds has no build variables, so the live widget key is the default. Override with TURNSTILE_SITEKEY.
+const TURNSTILE_SITEKEY = process.env.TURNSTILE_SITEKEY || "0x4AAAAAAFPPcyCR1BCpeR5_";
 const ICON = fs.readFileSync(D + "/icon.png").toString("base64");
 const homeJs = read("profile-shared.js") + "\n" + read("home-app.js");
 const perfilJs = read("profile-shared.js") + "\n" + read("perfil-app.js");
@@ -305,7 +305,8 @@ fs.writeFileSync(twDir + "/tailwind.config.js", `module.exports = {
   } }
 };
 `);
-execFileSync(path.join(ROOT, "node_modules", ".bin", "tailwindcss"), ["-c", twDir + "/tailwind.config.js", "-i", twDir + "/input.css", "-o", twDir + "/app.css", "--minify"], { cwd: twDir, stdio: "pipe" });
+const twBin = path.join(ROOT, "node_modules", ".bin", process.platform === "win32" ? "tailwindcss.cmd" : "tailwindcss");
+execFileSync(twBin, ["-c", twDir + "/tailwind.config.js", "-i", twDir + "/input.css", "-o", twDir + "/app.css", "--minify"], { cwd: twDir, stdio: "pipe", shell: process.platform === "win32" });
 let compiled = fs.readFileSync(twDir + "/app.css", "utf8").replace(/[^\x00-\x7F]/g, (ch) => "\\" + ch.codePointAt(0).toString(16) + " ");
 fs.writeFileSync(OUT + "/app.css", compiled);
 console.log("tailwind css bytes", compiled.length);

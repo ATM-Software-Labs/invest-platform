@@ -1,0 +1,20 @@
+# Worker de producción `invest` (invest.trujillomingorance.com).
+# Workers Builds ejecuta `npm run build` y luego `npx wrangler deploy` en la raíz.
+# El bundle lo genera web/public-worker. Los secretos (BREVO_API_KEY, TURNSTILE_SECRET)
+# no van aquí: se conservan los que ya están en el Worker.
+# keep_vars conserva BREVO_LIST_* y DOI_REPLY_TO definidos en el panel.
+name = "invest"
+main = "web/public-worker/dist/worker.js"
+account_id = "9c48e0ad7e36cf970f20839768fe8a64"
+compatibility_date = "2026-09-19"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+keep_vars = true
+
+[[kv_namespaces]]
+binding = "SUBSCRIBERS"
+id = "5557a9b8144342688d877a78a7136a92"
+
+[[routes]]
+pattern = "invest.trujillomingorance.com"
+custom_domain = true

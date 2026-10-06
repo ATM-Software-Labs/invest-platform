@@ -49,10 +49,12 @@ Next.js terminal. General information only, not financial advice.
 Datos de la web pública: cotizaciones y búsqueda de símbolos de **Yahoo Finance**, cifras anuales de **SEC EDGAR
 (XBRL 10-K)**. Las respuestas de error distinguen «sin resultado» de «fuente de datos no disponible».
 
-> ℹ️ Producción sirve el bundle de `web/public-worker/`. En la raíz solo hay una plantilla,
-> [`wrangler.example.toml`](wrangler.example.toml), con nombre y ruta de ejemplo: un `wrangler deploy` en la raíz no
-> puede sobrescribir el Worker `invest`. Para publicar el terminal Next.js, cópiala a `wrangler.toml` (ignorado por
-> git) con **otro** nombre de Worker y ruta, y ejecuta `npm run deploy:terminal`.
+> ℹ️ Producción sirve el bundle de `web/public-worker/`. Workers Builds (`npm run build` y
+> `npx wrangler deploy` en la raíz) usa [`wrangler.toml`](wrangler.toml): Worker `invest`,
+> el KV `SUBSCRIBERS` y el dominio `invest.trujillomingorance.com`. `keep_vars` deja las
+> variables del panel. Los secretos no están en el archivo. El terminal Next.js sigue en
+> [`wrangler.example.toml`](wrangler.example.toml): cópiala a `wrangler.terminal.toml` con
+> **otro** nombre de Worker y ejecuta `npm run deploy:terminal`.
 
 ## Puesta en marcha
 
@@ -105,22 +107,26 @@ Plantillas sin valores reales: [`wrangler.example.toml`](web/public-worker/wrang
 (opcional), `CACHE_TTL_*`, `ENABLE_DEMO_FIXTURES`, `HTTP_TIMEOUT_MS`, `HTTP_RETRIES`, `XAI_API_KEY`, `XAI_MODEL`,
 `XAI_BASE_URL`, `XAI_TIMEOUT_MS` y `RESEND_API_KEY` (`POST /api/newsletter`; sin ella responde 503).
 
-Nunca subas claves al repositorio: `.env`, `.dev.vars`, `wrangler.toml` local y `build.local.env` están en
-`.gitignore`.
+Nunca subas claves al repositorio: `.env`, `.dev.vars`, `wrangler.terminal.toml` y `build.local.env` están en
+`.gitignore`. `wrangler.toml` de la raíz no lleva secretos.
 
 ## Despliegue
 
 **Web pública** (Cloudflare Worker `invest`):
 
 ```bash
-cd web/public-worker
-cp wrangler.example.toml wrangler.toml        # rellena KV, vars y compatibility_date (no se sube a git)
-npx wrangler secret put BREVO_API_KEY -c wrangler.toml
-npx wrangler secret put TURNSTILE_SECRET -c wrangler.toml
-npm ci && npm run build && npx wrangler deploy -c wrangler.toml
+npm run build          # tsc del backend + web/public-worker/dist/worker.js
+npx wrangler deploy    # Worker `invest` (misma orden que Workers Builds)
 ```
 
-**Terminal Next.js** (opcional, no es la web de producción): `cp wrangler.example.toml wrangler.toml`, pon un nombre
+Los secretos se ponen una vez y el deploy no los borra:
+
+```bash
+npx wrangler secret put BREVO_API_KEY
+npx wrangler secret put TURNSTILE_SECRET
+```
+
+**Terminal Next.js** (opcional, no es la web de producción): `cp wrangler.example.toml wrangler.terminal.toml`, pon un nombre
 de Worker y una ruta propios y ejecuta `npm run deploy:terminal`.
 
 **Backend:** `npm run build && npm start` o la imagen Docker (`Dockerfile`, puerto 8787).
