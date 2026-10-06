@@ -484,7 +484,7 @@ async function handleSearch(request, url) {
   // Coins are offered as their EUR pair (the quote endpoint falls back to USD if Yahoo has none).
   cands.forEach(function (c) {
     const coin = c.type === "CRYPTOCURRENCY" ? cryptoBase(c.symbol) : null;
-    push(coin ? { symbol: coin + "-EUR", name: c.name, exchange: c.exchange, type: c.type } : c);
+    push(coin ? { symbol: coin + "-EUR", name: typeof c.name === "string" ? c.name.replace(/ USD$/, " EUR") : c.name, exchange: c.exchange, type: c.type } : c);
   });
   if (!results.length && state.upstreamError) return json({ ok: false, error: "upstream_unavailable", results: [] }, 502, "no-store");
   return json({ ok: true, results: results.slice(0, 8) }, 200, SEARCH_CACHE);

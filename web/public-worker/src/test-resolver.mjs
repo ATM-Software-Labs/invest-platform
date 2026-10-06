@@ -91,5 +91,6 @@ mode = "ok";
   assert.equal(d.results[0].symbol, "BTC-EUR", "alias suggestion is the EUR pair");
   const c = await (await worker.fetch(new Request("https://invest.example/api/search?q=chainlink"), {})).json();
   assert.equal(c.results[0].symbol, "LINK-EUR", "searched coins are offered in EUR");
+  assert.equal(c.results[0].name, "Chainlink EUR", "suggestion label matches the EUR pair");
 }
-console.log("resolver tests: " + (cases.length + 12) + " passed");
+console.log("resolver tests: " + (cases.length + 13) + " passed");
