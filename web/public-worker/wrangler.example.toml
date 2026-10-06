@@ -1,0 +1,24 @@
+# Template for the `invest` Worker. Copy to wrangler.toml (gitignored) and fill in the placeholders.
+# Deploy: npm ci && npm run build && npx wrangler deploy -c wrangler.toml
+name = "invest"
+main = "dist/worker.js"
+compatibility_date = "<COMPATIBILITY_DATE>"   # keep the date of the deployed Worker
+compatibility_flags = ["nodejs_compat"]
+# account_id = "<CLOUDFLARE_ACCOUNT_ID>"
+
+# routes = [{ pattern = "<INVEST_HOSTNAME>", custom_domain = true }]
+
+# KV: rate-limit counters (hashed IP, 1 h TTL), per-address cooldown (hashed email, 15 min TTL)
+# and cached Brevo ids (cfg:brevo:folder, cfg:brevo:list:*, cfg:brevo:doi).
+[[kv_namespaces]]
+binding = "SUBSCRIBERS"
+id = "<KV_NAMESPACE_ID>"
+
+[vars]
+BREVO_LIST_MARKETS = "<BREVO_LIST_MARKETS_ID>"   # Brevo list "Markets Digest"
+BREVO_LIST_INVEST = "<BREVO_LIST_INVEST_ID>"     # Brevo list "INVEST Notas"
+DOI_REPLY_TO = "soporte@example.com"             # Reply-To of the double opt-in template
+# BREVO_DOI_TEMPLATE_ID = "<BREVO_DOI_TEMPLATE_ID>"  # optional: pin the DOI template
+
+# Secrets (never in this file): BREVO_API_KEY, TURNSTILE_SECRET
+#   npx wrangler secret put BREVO_API_KEY -c wrangler.toml

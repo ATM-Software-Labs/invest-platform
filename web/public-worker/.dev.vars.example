@@ -1,0 +1,16 @@
+# Copy to .dev.vars (gitignored) for `wrangler dev`. In production set these on the Worker:
+#   secrets: npx wrangler secret put <NAME> -c wrangler.toml
+#   vars:    [vars] in wrangler.toml (plain text)
+
+# --- secrets ---
+BREVO_API_KEY=<BREVO_API_KEY>
+TURNSTILE_SECRET=<TURNSTILE_SECRET>
+# Only for a one-off end-to-end test (skips Turnstile for SUB_TEST_EMAIL); delete right after.
+# SUB_TEST_TOKEN=<random string, >= 32 chars>
+
+# --- plain-text vars ---
+BREVO_LIST_MARKETS=<BREVO_LIST_MARKETS_ID>
+BREVO_LIST_INVEST=<BREVO_LIST_INVEST_ID>
+DOI_REPLY_TO=soporte@example.com
+# BREVO_DOI_TEMPLATE_ID=<BREVO_DOI_TEMPLATE_ID>
+# SUB_TEST_EMAIL=tester@example.com

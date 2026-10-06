@@ -1,0 +1,20 @@
+# Dependencies and build output (npm run build -> dist/worker.js)
+node_modules/
+dist/
+.wrangler/
+
+# Generated bundles from earlier manual builds (never commit compiled output)
+/worker.js
+/invest-worker-search.js
+/index-search.html
+/*.bundle.js
+
+# Local-only files with real account ids, KV ids, list ids, emails and notes
+build.local.env
+wrangler.toml
+wrangler.local.toml
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+DEPLOY-NOTES.md
+*.bak
