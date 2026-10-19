@@ -196,6 +196,7 @@ function topbar(ctaHref, ctaLabel, active) {
       </span>
     </a>
     <div class="atm-actions">
+      <a href="https://charts.trujillomingorance.com/" class="atm-btn hidden min-[380px]:inline-flex items-center rounded-lg px-2 py-1.5 font-sans text-xs no-underline sm:px-2.5">Markets Briefing</a>
       <a id="nav-perfil" href="/perfil/" class="atm-btn hidden min-[380px]:inline-flex items-center rounded-lg px-2 py-1.5 font-sans text-xs no-underline sm:px-2.5" data-i18n="navProfile">Perfil</a>
       <div class="relative" id="lang-picker">
         <button type="button" id="lang-btn" class="atm-btn inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 font-sans text-xs sm:px-2.5" title="Idioma" aria-label="Idioma" aria-haspopup="listbox" aria-expanded="false">
@@ -242,6 +243,8 @@ function footer() {
         <a href="/aviso-legal/" data-i18n="navLegal">Aviso legal</a>
         <span class="atm-foot-sep" aria-hidden="true">·</span>
         <a href="/privacidad/" data-i18n="navPrivacy">Privacidad</a>
+        <span class="atm-foot-sep" aria-hidden="true">·</span>
+        <a href="https://charts.trujillomingorance.com/">Markets Briefing</a>
         <span class="atm-foot-sep" aria-hidden="true">·</span>
         <a href="/cookies/" data-i18n="navCookies">Cookies</a>
         <span class="atm-foot-sep" aria-hidden="true">·</span>

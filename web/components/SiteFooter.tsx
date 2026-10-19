@@ -29,6 +29,9 @@ export function SiteFooter() {
           <a href="/cookies/" className="hover:text-neutral-200">
             Cookies
           </a>
+          <a href="https://charts.trujillomingorance.com/" className="hover:text-neutral-200">
+            Markets Briefing
+          </a>
           <a href="https://labs.trujillomingorance.com" className="hover:text-neutral-200">
             ATM Labs
           </a>
