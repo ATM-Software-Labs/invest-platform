@@ -303,7 +303,7 @@ function withSeo(text, path) {
   return text.replace(anchor[0], anchor[0] + "\n" + tags);
 }
 
-const SITEMAP_PATHS = ["/", "/munger/", "/modelos/", "/glosario/", "/comparar/", "/suscribirse/", "/ensayos/redundancia-de-efectivo/", "/perfil/", "/aviso-legal/", "/privacidad/", "/cookies/"];
+const SITEMAP_PATHS = ["/", "/munger/", "/modelos/", "/glosario/", "/comparar/", "/suscribirse/", "/markets/", "/ensayos/redundancia-de-efectivo/", "/perfil/", "/aviso-legal/", "/privacidad/", "/cookies/"];
 function sitemapXml() {
   return '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
     SITEMAP_PATHS.map(function (p) { return "  <url><loc>" + SITE_ORIGIN + p + "</loc></url>"; }).join("\n") + "\n</urlset>\n";

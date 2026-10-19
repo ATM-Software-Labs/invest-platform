@@ -55,7 +55,7 @@ function subForm(id, opts) {
   <div class="sub-live space-y-3">
     <fieldset class="space-y-2">
       <legend class="mb-2 font-sans text-xs font-medium text-mute" data-i18n="subStreamsLegend">Listas</legend>
-      <label class="stream-opt"><input type="checkbox" name="markets" value="1"/><span class="min-w-0"><span class="block font-sans text-sm font-semibold text-ink"><span data-i18n="subMarkets">Markets</span> <span class="font-mono text-[11px] font-normal text-dim" data-i18n="subMarketsFrom">desde markets@trujillomingorance.com</span></span><span class="mt-0.5 block font-sans text-xs leading-relaxed text-mute" data-i18n="subMarketsDesc">Actualizaciones de mercado en cada franja del d\u00eda: ma\u00f1ana 09:00, mediod\u00eda 15:00 y cierre 22:15 (hora de Madrid).</span></span></label>
+      <label class="stream-opt"><input type="checkbox" name="markets" value="1"/><span class="min-w-0"><span class="block font-sans text-sm font-semibold text-ink"><span data-i18n="subMarkets">Markets</span> <span class="font-mono text-[11px] font-normal text-dim" data-i18n="subMarketsFrom">desde markets@trujillomingorance.com</span></span><span class="mt-0.5 block font-sans text-xs leading-relaxed text-mute" data-i18n="subMarketsDesc">Actualizaciones de mercado en cada franja del d\u00eda: ma\u00f1ana 09:00, mediod\u00eda 15:00 y cierre 22:45 (hora de Madrid).</span></span></label>
       <label class="stream-opt"><input type="checkbox" name="invest" value="1" checked/><span class="min-w-0"><span class="block font-sans text-sm font-semibold text-ink"><span data-i18n="subInvest">INVEST</span> <span class="font-mono text-[11px] font-normal text-dim" data-i18n="subInvestFrom">desde invest@trujillomingorance.com</span></span><span class="mt-0.5 block font-sans text-xs leading-relaxed text-mute" data-i18n="subInvestDesc">Educaci\u00f3n, modelos mentales e ideas de inversi\u00f3n con fin educativo. No es asesoramiento.</span></span></label>
     </fieldset>
     <div>
@@ -245,6 +245,37 @@ ${script(perfilJs)}
       active: "/suscribirse/", crumb: "INVEST \u203a SUSCRIPCI\u00d3N", crumbKey: "crumbSubscribe", h1: "Suscribirse a las notas", h1Key: "subscribeH1",
       lead: "Elige una lista o las dos. Recibir\u00e1s un correo para confirmar (doble opt-in); sin confirmaci\u00f3n no se guarda nada m\u00e1s de 48 horas.", leadKey: "subLead",
       inner: `    <section class="atm-card mt-6 rounded-2xl p-5 md:p-6" aria-label="Formulario">${subForm("sub-page")}</section>\n` + prose(subscribeInfo), scripts: [subscribeJs],
+    }),
+    "/markets/": page({
+      title: "Markets Briefing (versi\u00f3n alternativa) \u00b7 INVEST", description: "Versi\u00f3n alternativa de charts.trujillomingorance.com: suscripci\u00f3n, gesti\u00f3n de env\u00edos, baja y textos legales de Markets Briefing.",
+      active: "/markets/", crumb: "INVEST \u203a MARKETS BRIEFING", h1: "Markets Briefing",
+      lead: "Versi\u00f3n alternativa de <a href=\"https://charts.trujillomingorance.com/\" class=\"text-accent hover:underline\">charts.trujillomingorance.com</a>. Si charts no carga, desde aqu\u00ed puedes suscribirte, gestionar tus env\u00edos o darte de baja.",
+      inner: `    <section class="mt-6 grid gap-3 sm:grid-cols-2" aria-label="Env\u00edos">
+      <div class="atm-card rounded-2xl p-5"><p class="font-mono text-xs text-accent">09:00</p><h2 class="mt-1 font-sans text-base font-semibold text-ink">Morning</h2><p class="mt-1 text-sm text-mute">Apertura europea</p></div>
+      <div class="atm-card rounded-2xl p-5"><p class="font-mono text-xs text-accent">15:00</p><h2 class="mt-1 font-sans text-base font-semibold text-ink">Midday</h2><p class="mt-1 text-sm text-mute">Macro de EE. UU. y premercado</p></div>
+      <div class="atm-card rounded-2xl p-5"><p class="font-mono text-xs text-accent">22:45</p><h2 class="mt-1 font-sans text-base font-semibold text-ink">Close</h2><p class="mt-1 text-sm text-mute">Cierre de sesi\u00f3n</p></div>
+      <div class="atm-card rounded-2xl p-5"><p class="font-mono text-xs text-accent">vie 18:00</p><h2 class="mt-1 font-sans text-base font-semibold text-ink">Weekly</h2><p class="mt-1 text-sm text-mute">Resumen semanal</p></div>
+    </section>
+    <p class="mt-3 text-xs text-dim">Hora de Madrid, de lunes a viernes. Informaci\u00f3n general de mercado, no asesoramiento.</p>
+    <section class="atm-card mt-8 rounded-2xl p-5 md:p-6" aria-labelledby="mk-sub">
+      <h2 id="mk-sub" class="font-sans text-base font-semibold text-ink">Suscribirse</h2>
+      <p class="mt-2 text-sm leading-relaxed text-mute">Gratis, con doble confirmaci\u00f3n. El formulario se abre con la lista Markets marcada.</p>
+      <a href="/suscribirse/?lista=markets#sub-page" class="mt-4 inline-flex rounded-full bg-pill px-5 py-2.5 font-sans text-sm font-semibold text-white no-underline hover:brightness-110">Abrir el formulario</a>
+    </section>
+    <section class="atm-card mt-3 rounded-2xl p-5 md:p-6" aria-labelledby="mk-man">
+      <h2 id="mk-man" class="font-sans text-base font-semibold text-ink">Elegir env\u00edos o idioma</h2>
+      <p class="mt-2 text-sm leading-relaxed text-mute">Usa \u00abElegir env\u00edos\u00bb en el pie de cualquier correo (enlace personal y firmado). Si no se abre, p\u00eddelo por correo y lo cambiamos a mano.</p>
+      <a href="mailto:alberto@trujillomingorance.com?subject=Preferencias%20Markets%20Briefing" class="mt-4 inline-flex rounded-full border border-line px-5 py-2.5 font-sans text-sm font-semibold text-ink no-underline hover:border-accent">Escribir: Preferencias</a>
+    </section>
+    <section class="atm-card mt-3 rounded-2xl p-5 md:p-6" aria-labelledby="mk-baja">
+      <h2 id="mk-baja" class="font-sans text-base font-semibold text-ink">Darse de baja</h2>
+      <p class="mt-2 text-sm leading-relaxed text-mute">Lo m\u00e1s r\u00e1pido es el bot\u00f3n \u00abCancelar suscripci\u00f3n\u00bb junto al remitente (Gmail, Outlook, Apple Mail) o \u00abDarse de baja\u00bb en el pie del correo. Si no funcionan, escr\u00edbenos con el asunto \u00abBaja\u00bb.</p>
+      <a href="mailto:alberto@trujillomingorance.com?subject=Baja%20Markets%20Briefing" class="mt-4 inline-flex rounded-full border border-line px-5 py-2.5 font-sans text-sm font-semibold text-ink no-underline hover:border-accent">Escribir: Baja</a>
+    </section>
+    <div class="${PROSE} mt-8">
+<p><strong>Legal:</strong> <a href="/aviso-legal/">Aviso legal</a> \u00b7 <a href="/privacidad/">Privacidad</a>. <strong>Web principal:</strong> <a href="https://charts.trujillomingorance.com/">charts.trujillomingorance.com</a>.</p>
+<p><em>English:</em> this is the fallback page for Markets Briefing. Subscribe with the form above, use \u00abEmail preferences\u00bb or your mail app\u2019s Unsubscribe button, or email us with subject \u00abBaja\u00bb (unsubscribe) or \u00abPreferencias\u00bb (preferences).</p>
+    </div>`,
     }),
     "/confirmado/": page({
       title: "Suscripci\u00f3n confirmada \u00b7 INVEST", description: "Suscripci\u00f3n confirmada.", active: "/suscribirse/",

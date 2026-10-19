@@ -1,6 +1,14 @@
 (function () {
   var forms = Array.prototype.slice.call(document.querySelectorAll("form.sub-form"));
   if (!forms.length) return;
+  // ?lista=markets (links from charts.trujillomingorance.com): preselect only the Markets list
+  try {
+    var lista = new URLSearchParams(location.search).get("lista");
+    if (lista === "markets" || lista === "invest") forms.forEach(function (f) {
+      var mk = f.querySelector('input[name="markets"]'), iv = f.querySelector('input[name="invest"]');
+      if (mk) mk.checked = lista === "markets"; if (iv) iv.checked = lista === "invest";
+    });
+  } catch (e) {}
   var M = {
     es: { soon: "Suscripci\u00f3n disponible pronto. Todav\u00eda no se recoge ning\u00fan correo.", pick: "Marca al menos una lista (Markets o INVEST).", consent: "Necesitamos tu aceptaci\u00f3n de la pol\u00edtica de privacidad.", email: "Revisa la direcci\u00f3n de correo.", captcha: "Completa la verificaci\u00f3n anti-bots.", sending: "Enviando\u2026", ok: "Listo. Te hemos enviado un correo para confirmar (rev\u00edsalo tambi\u00e9n en spam). Sin confirmaci\u00f3n no te a\u00f1adimos a ninguna lista.", rate: "Demasiados intentos desde esta conexi\u00f3n. Prueba dentro de una hora.", ts: "La verificaci\u00f3n anti-bots no se ha validado. Int\u00e9ntalo de nuevo.", provider: "El proveedor de correo no responde ahora mismo. Int\u00e9ntalo m\u00e1s tarde.", generic: "No se ha podido completar. Int\u00e9ntalo de nuevo." },
     en: { soon: "Subscription available soon. No email addresses are collected yet.", pick: "Select at least one list (Markets or INVEST).", consent: "Please accept the privacy policy.", email: "Please check the email address.", captcha: "Please complete the anti-bot check.", sending: "Sending\u2026", ok: "Done. We sent you an email to confirm (check spam too). Without confirmation you are not added to any list.", rate: "Too many attempts from this connection. Try again in an hour.", ts: "The anti-bot check failed. Please try again.", provider: "The email provider is not responding right now. Please try later.", generic: "Something went wrong. Please try again." }
