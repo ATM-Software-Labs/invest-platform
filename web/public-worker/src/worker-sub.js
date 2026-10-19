@@ -142,7 +142,7 @@ function doiTemplateHtml() {
     '<h1 style="margin:0 0 14px 0;font-size:22px;line-height:1.3;color:#0f172a;">Confirma tu suscripci&oacute;n</h1>' +
     '<p style="margin:0 0 14px 0;font-size:15px;line-height:1.6;">Alguien (seguramente t&uacute;) ha pedido recibir una o las dos listas de correo de Trujillo Mingorance desde invest.trujillomingorance.com:</p>' +
     '<table role="presentation" width="100%" cellpadding="0" cellspacing="0">' +
-    row("Markets", "markets@trujillomingorance.com", "Actualizaciones de mercado en cada franja del d&iacute;a (ma&ntilde;ana 09:00, mediod&iacute;a 15:00 y cierre 22:15, hora de Madrid).") +
+    row("Markets", "markets@trujillomingorance.com", "Actualizaciones de mercado en cada franja del d&iacute;a (ma&ntilde;ana 09:00, mediod&iacute;a 15:00 y cierre 22:45, hora de Madrid).") +
     row("INVEST", "invest@trujillomingorance.com", "Educaci&oacute;n, modelos mentales e ideas de inversi&oacute;n con fin educativo. No es asesoramiento.") +
     '</table>' +
     '<p style="margin:6px 0 0 0;font-size:13px;line-height:1.6;color:#475569;">Solo se te a&ntilde;adir&aacute; a las listas que marcaste en el formulario.</p>' +
@@ -195,7 +195,7 @@ async function handleSubscribe(request, env) {
     if (ct.includes("application/json")) body = await request.json();
     else {
       const fd = await request.formData();
-      body = { email: fd.get("email"), website: fd.get("website"), consent: fd.get("consent"), token: fd.get("cf-turnstile-response"), streams: { markets: fd.get("markets"), invest: fd.get("invest") } };
+      body = { email: fd.get("email"), website: fd.get("website"), consent: fd.get("consent"), token: fd.get("cf-turnstile-response"), streams: { markets: fd.get("markets"), invest: fd.get("invest") }, mlang: fd.get("mlang") };
     }
   } catch (err) {
     return json({ ok: false, error: "bad_request" }, 400);
@@ -244,7 +244,19 @@ async function handleSubscribe(request, env) {
     return json({ ok: false, error: "mail_failed" }, 502);
   }
   await env.SUBSCRIBERS.put(coolKey, "1", { expirationTtl: EMAIL_COOLDOWN });
+  if (streams.indexOf("markets") !== -1) await saveMarketsLang(env, email, body.mlang);
   return json({ ok: true, status: "pending" }, 200);
+}
+// Markets Briefing language for a NEW subscriber, in the charts Worker's KV (prefs/<sha256(email)>, same format it reads).
+// Never overwrites an existing preference, so nobody can change another subscriber's settings from this form.
+async function saveMarketsLang(env, email, mlang) {
+  if (!env.MARKETS_KV || (mlang !== "es" && mlang !== "en")) return;
+  try {
+    const key = "prefs/" + (await sha256hex(String(email).trim().toLowerCase()));
+    if (await env.MARKETS_KV.get(key)) return;
+    const v = { morning: true, midday: true, close: true, weekly: true, lang: mlang, focus: [] };
+    await env.MARKETS_KV.put(key, JSON.stringify(v), { metadata: { morning: true, midday: true, close: true, weekly: true, lang: mlang, focus: "" } });
+  } catch (err) {}
 }
 
 // ---- SEO: canonical, Open Graph, Twitter card, robots and JSON-LD, injected per request from each page's title/description ----

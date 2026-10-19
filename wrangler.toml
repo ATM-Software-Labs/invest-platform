@@ -18,3 +18,9 @@ id = "5557a9b8144342688d877a78a7136a92"
 [[routes]]
 pattern = "invest.trujillomingorance.com"
 custom_domain = true
+
+# Markets Briefing preferences (KV of the charts Worker `markets-digest`): only used to store the email language
+# chosen by a NEW Markets subscriber (never overwrites an existing preference).
+[[kv_namespaces]]
+binding = "MARKETS_KV"
+id = "6e77435f7d0a460cbd92ef217d5910c7"

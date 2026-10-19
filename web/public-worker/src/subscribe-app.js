@@ -1,6 +1,8 @@
 (function () {
   var forms = Array.prototype.slice.call(document.querySelectorAll("form.sub-form"));
   if (!forms.length) return;
+  // Markets email language: default from the browser (es* -> es, otherwise en); stored by the server for new subscribers only
+  try { var nav = (navigator.languages && navigator.languages[0]) || navigator.language || "es"; forms.forEach(function (f) { var sel = f.querySelector('select[name="mlang"]'); if (sel) sel.value = /^es/i.test(nav) ? "es" : "en"; }); } catch (e) {}
   // ?lista=markets (links from charts.trujillomingorance.com): preselect only the Markets list
   try {
     var lista = new URLSearchParams(location.search).get("lista");
@@ -77,7 +79,7 @@
       fetch("/api/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ email: email.trim(), streams: { markets: !!(mk && mk.checked), invest: !!(iv && iv.checked) }, consent: true, lang: lang(), website: hp ? hp.value : "", token: f._token })
+        body: JSON.stringify({ email: email.trim(), streams: { markets: !!(mk && mk.checked), invest: !!(iv && iv.checked) }, consent: true, lang: lang(), mlang: ((f.querySelector('select[name="mlang"]') || {}).value || ""), website: hp ? hp.value : "", token: f._token })
       }).then(function (r) { return r.json().catch(function () { return { ok: false, error: "error" }; }); })
         .catch(function () { return { ok: false, error: "error" }; })
         .then(function (d) {
