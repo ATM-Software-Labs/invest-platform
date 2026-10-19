@@ -195,7 +195,7 @@ async function handleSubscribe(request, env) {
     if (ct.includes("application/json")) body = await request.json();
     else {
       const fd = await request.formData();
-      body = { email: fd.get("email"), website: fd.get("website"), consent: fd.get("consent"), token: fd.get("cf-turnstile-response"), streams: { markets: fd.get("markets"), invest: fd.get("invest") }, mlang: fd.get("mlang") };
+      body = { email: fd.get("email"), website: fd.get("website"), consent: fd.get("consent"), token: fd.get("cf-turnstile-response"), streams: { markets: fd.get("markets"), invest: fd.get("invest") }, mlang: fd.get("mlang"), mcountry: fd.get("mcountry") };
     }
   } catch (err) {
     return json({ ok: false, error: "bad_request" }, 400);
@@ -244,18 +244,21 @@ async function handleSubscribe(request, env) {
     return json({ ok: false, error: "mail_failed" }, 502);
   }
   await env.SUBSCRIBERS.put(coolKey, "1", { expirationTtl: EMAIL_COOLDOWN });
-  if (streams.indexOf("markets") !== -1) await saveMarketsLang(env, email, body.mlang);
+  if (streams.indexOf("markets") !== -1) await saveMarketsLang(env, email, body.mlang, body.mcountry);
   return json({ ok: true, status: "pending" }, 200);
 }
 // Markets Briefing language for a NEW subscriber, in the charts Worker's KV (prefs/<sha256(email)>, same format it reads).
 // Never overwrites an existing preference, so nobody can change another subscriber's settings from this form.
-async function saveMarketsLang(env, email, mlang) {
+const MARKETS_COUNTRIES = ["ES", "FR", "DE", "IT", "PT", "NL", "BE", "AT", "CH", "GB", "US", "CA", "MX"]; // indices the charts Worker can fetch
+async function saveMarketsLang(env, email, mlang, mcountry) {
   if (!env.MARKETS_KV || (mlang !== "es" && mlang !== "en")) return;
   try {
     const key = "prefs/" + (await sha256hex(String(email).trim().toLowerCase()));
     if (await env.MARKETS_KV.get(key)) return;
-    const v = { morning: true, midday: true, close: true, weekly: true, lang: mlang, focus: [] };
-    await env.MARKETS_KV.put(key, JSON.stringify(v), { metadata: { morning: true, midday: true, close: true, weekly: true, lang: mlang, focus: "" } });
+    const c = MARKETS_COUNTRIES.indexOf(String(mcountry || "").toUpperCase()) !== -1 ? String(mcountry).toUpperCase() : "";
+    const v = { morning: true, midday: true, close: true, weekly: true, lang: mlang, focus: [] }; if (c) v.country = c;
+    const meta = { morning: true, midday: true, close: true, weekly: true, lang: mlang, focus: "" }; if (c) meta.country = c;
+    await env.MARKETS_KV.put(key, JSON.stringify(v), { metadata: meta });
   } catch (err) {}
 }
 
