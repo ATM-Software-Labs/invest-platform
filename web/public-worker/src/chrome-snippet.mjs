@@ -117,6 +117,23 @@ const SHARED_CSS = `
   .atm-foot-notice strong{color:var(--text);font-weight:600}
   [data-theme="light"] .atm-foot{background:#f8fafc}
   [data-theme="light"] .atm-foot-notice{background:#fff;border-color:#e2e8f0}
+  /* ATM Software Labs: shared network strip */
+  /* ATM Software Labs: shared network footer strip (v1, 2026-10-20).
+     Copy this file into each site; it has no runtime dependency on another origin.
+     Theme-agnostic: inherits the site's text colour and background (works in light and dark). */
+  .atm-net{border-top:1px solid color-mix(in srgb,currentColor 14%,transparent);margin-top:0;padding:18px 0 22px;font-family:var(--atm-font-sans,Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif);font-size:13px;line-height:1.5;text-align:left}
+  .atm-net__in{box-sizing:border-box;width:min(70rem,calc(100% - 2.5rem));margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:6px 20px}
+  .atm-net a{color:inherit;text-decoration:none}
+  .atm-net__brand{font-family:var(--atm-font-mono,"JetBrains Mono","IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace);font-size:12px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;padding:6px 0}
+  .atm-net__sites{display:flex;flex-wrap:wrap;gap:0 2px;margin:0;padding:0;list-style:none;flex:1 1 auto}
+  .atm-net__sites a{display:inline-block;padding:6px 8px;border-radius:6px;color:color-mix(in srgb,currentColor 78%,transparent)}
+  .atm-net__sites a:hover,.atm-net__sites a:focus-visible,.atm-net__sites a[aria-current]{color:inherit;background:color-mix(in srgb,currentColor 8%,transparent)}
+  .atm-net__legal{margin:0;color:color-mix(in srgb,currentColor 78%,transparent);white-space:nowrap}
+  .atm-net__legal a{text-decoration:underline;text-underline-offset:2px}
+  .atm-net a:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+  @media (max-width:640px){.atm-net__in{flex-direction:column;align-items:flex-start}.atm-net__sites{margin-left:-8px}.atm-net__legal{white-space:normal}}
+  @media print{.atm-net{display:none}}
+  .atm-foot .atm-net{color:var(--text)}
 
   .status-error{border-color:#94a3b8;background:color-mix(in srgb,var(--elev) 80%,#64748b);color:var(--text)}
   .status-badge{display:inline-flex;align-items:center;border-radius:9999px;padding:.2rem .55rem;font-family:Inter,ui-sans-serif,system-ui,sans-serif;font-size:.65rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border:1px solid transparent;line-height:1.2}
@@ -262,6 +279,7 @@ function footer() {
       <p class="mt-2"><strong data-i18n="footCnmvLabel">CNMV / MiFID II</strong> — <span data-i18n="foot4">El titular no está inscrito en el registro de empresas de servicios de inversión de la CNMV ni presta el servicio de asesoramiento del artículo 140 de la Ley 6/2023.</span></p>
     </div>
   </div>
+  <div class="atm-net"><div class="atm-net__in"><a class="atm-net__brand" href="https://trujillomingorance.com/">ATM Software Labs</a><nav id="atm-net-nav" aria-label="Sitios de ATM Software Labs"><ul class="atm-net__sites"><li><a href="https://labs.trujillomingorance.com/">ATM Labs</a></li><li><a href="https://invest.trujillomingorance.com/" aria-current="page">INVEST</a></li><li><a href="https://charts.trujillomingorance.com/">Markets Briefing</a></li><li><a href="https://ai.trujillomingorance.com/">Trujillo AI</a></li><li><a href="https://guides.trujillomingorance.com/" data-i18n="netGuides">Guías</a></li><li><a href="https://tools.trujillomingorance.com/">Tools</a></li><li><a href="https://rewrite.trujillomingorance.com/">Rewrite</a></li><li><a href="https://alberto.trujillomingorance.com/">Alberto</a></li></ul></nav></div></div>
 </footer>`;
 }
 
@@ -290,7 +308,7 @@ function themeScript() {
       navLegal:'Aviso legal',navPrivacy:'Privacidad',navCookies:'Cookies',navProfile:'Perfil',crumbProfile:'INVEST › PERFIL',profileH1:'Perfil inversor',profileTitle:'Perfil inversor · INVEST',
       footBrand:'Información general · Trujillo Mingorance / ATM Labs',footCnmvLabel:'CNMV / MiFID II',
       navHome:'Consulta',navMunger:'Checklist Munger',navModels:'Modelos mentales',navCompare:'Comparar',navGlossary:'Glosario',navEssay:'Ensayo',navSubscribe:'Suscribirse',
-      footSubTitle:'Suscribirse a las notas',footSubLead:'Dos listas opcionales: Markets (franjas del día) e INVEST (educación y modelos mentales). Doble confirmación, baja en un clic.',footSubBtn:'Suscribirse',
+      footSubTitle:'Suscribirse a las notas',footSubLead:'Dos listas opcionales: Markets (franjas del día) e INVEST (educación y modelos mentales). Doble confirmación, baja en un clic.',footSubBtn:'Suscribirse',netAria:'Sitios de ATM Software Labs',netGuides:'Guías',
       cardMungerEyebrow:'Checklist',cardModelsEyebrow:'Modelos',cardModelsTitle:'Modelos mentales',cardModelsLead:'Margen de seguridad, círculo de competencia, inversión, coste de oportunidad, redundancia, tasas base e incentivos.',
       cardGlossaryEyebrow:'Glosario',cardGlossaryTitle:'Términos del panel',cardGlossaryLead:'Qué significan FCF, margen neto, deuda LP, 10-K y el resto de cifras que muestra la consulta.',
       cardCompareEyebrow:'Comparar',cardCompareTitle:'Comparar 2–3 activos',cardCompareLead:'Cifras lado a lado tal como las devuelve la consulta. Lo que falta se muestra como «sin dato».',
@@ -324,7 +342,7 @@ function themeScript() {
       navLegal:'Legal notice',navPrivacy:'Privacy',navCookies:'Cookies',navProfile:'Profile',crumbProfile:'INVEST › PROFILE',profileH1:'Investor profile',profileTitle:'Investor profile · INVEST',
       footBrand:'General information · Trujillo Mingorance / ATM Labs',footCnmvLabel:'CNMV / MiFID II',
       navHome:'Lookup',navMunger:'Munger checklist',navModels:'Mental models',navCompare:'Compare',navGlossary:'Glossary',navEssay:'Essay',navSubscribe:'Subscribe',
-      footSubTitle:'Subscribe to the notes',footSubLead:'Two optional lists: Markets (daily time slots) and INVEST (education and mental models). Double opt-in, one-click unsubscribe.',footSubBtn:'Subscribe',
+      footSubTitle:'Subscribe to the notes',footSubLead:'Two optional lists: Markets (daily time slots) and INVEST (education and mental models). Double opt-in, one-click unsubscribe.',footSubBtn:'Subscribe',netAria:'ATM Software Labs sites',netGuides:'Guides',
       cardMungerEyebrow:'Checklist',cardModelsEyebrow:'Models',cardModelsTitle:'Mental models',cardModelsLead:'Margin of safety, circle of competence, inversion, opportunity cost, redundancy, base rates and incentives.',
       cardGlossaryEyebrow:'Glossary',cardGlossaryTitle:'Panel terms',cardGlossaryLead:'What FCF, net margin, LT debt, 10-K and the other lookup figures mean.',
       cardCompareEyebrow:'Compare',cardCompareTitle:'Compare 2–3 assets',cardCompareLead:'Figures side by side exactly as the lookup returns them. Missing values show as “no data”.',
@@ -365,6 +383,8 @@ function themeScript() {
     if(langBtn){ langBtn.title=pack.langTitle; langBtn.setAttribute('aria-label',pack.langTitle); }
     var themeBtn=document.getElementById('theme-btn');
     if(themeBtn){ themeBtn.title=pack.themeTitle; themeBtn.setAttribute('aria-label',pack.themeTitle); }
+    var netNav=document.getElementById('atm-net-nav');
+    if(netNav&&pack.netAria){ netNav.setAttribute('aria-label',pack.netAria); }
     document.querySelectorAll('[data-i18n]').forEach(function(node){
       var key=node.getAttribute('data-i18n');
       if(!key||pack[key]==null) return;
