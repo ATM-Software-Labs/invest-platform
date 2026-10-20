@@ -33,7 +33,7 @@ const SHARED_CSS = `
   :root,[data-theme="dark"]{
     color-scheme:dark;
     --bg:#0b0f14;--elev:#11161d;--card:#11161d;--card-hover:#171d26;
-    --text:#f8fafc;--muted:#94a3b8;--dim:#64748b;
+    --text:#f8fafc;--muted:#94a3b8;--dim:#8291a7;
     --accent:#3b82f6;--pill:#2563eb;
     --line:rgba(255,255,255,.08);--line-solid:#1e293b;
     --header:rgba(11,15,20,.92);--btn-border:rgba(255,255,255,.1);
@@ -68,7 +68,7 @@ const SHARED_CSS = `
   [data-theme="dark"] .icon-sun{display:block}
   [data-theme="light"] .icon-moon{display:block}
   .prose-atm code{overflow-wrap:anywhere;word-break:break-word}
-  .prose-atm a{color:var(--accent);transition:color .15s ease}
+  .prose-atm a,.consent-row a,.disclaimer-links a{color:var(--accent);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px;transition:color .15s ease}
   .prose-atm a:hover{text-decoration:underline;filter:brightness(1.1)}
   .callout{background:color-mix(in srgb,var(--elev) 85%,transparent);border:1px solid var(--line-solid);border-radius:.75rem;padding:1.25rem}
   details > summary{list-style:none}
@@ -113,7 +113,7 @@ const SHARED_CSS = `
   .atm-foot-legal a{color:var(--accent);text-decoration:none;font-weight:500;transition:color .15s ease,opacity .15s ease}
   .atm-foot-legal a:hover{text-decoration:underline;filter:brightness(1.1)}
   .atm-foot-sep{color:var(--dim);opacity:.5;user-select:none}
-  .atm-foot-notice{margin-top:1rem;padding:.85rem 1rem;border-radius:.75rem;border:1px solid var(--line-solid);background:color-mix(in srgb,var(--bg) 70%,var(--elev));color:var(--muted);font-size:.7rem;line-height:1.55}
+  .atm-foot-notice{margin-top:1rem;padding:.85rem 1rem;border-radius:.75rem;border:1px solid var(--line-solid);background:color-mix(in srgb,var(--bg) 70%,var(--elev));color:var(--muted);font-size:.8rem;line-height:1.55}
   .atm-foot-notice strong{color:var(--text);font-weight:600}
   [data-theme="light"] .atm-foot{background:#f8fafc}
   [data-theme="light"] .atm-foot-notice{background:#fff;border-color:#e2e8f0}
@@ -172,9 +172,9 @@ function head(title, description, extraHead) {
 <meta name="description" content="${description}"/>
 <meta name="theme-color" content="#0b0f14" id="theme-color-meta"/>
 <link rel="icon" href="/favicon.png"/>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link rel="preload" href="/fonts/inter-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin=""/>
+<link rel="preload" href="/fonts/inter-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin=""/>
+<style>@font-face{font-family:"Inter";font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/inter-latin-400-normal.woff2) format("woff2")}@font-face{font-family:"Inter";font-style:normal;font-weight:500;font-display:swap;src:url(/fonts/inter-latin-500-normal.woff2) format("woff2")}@font-face{font-family:"Inter";font-style:normal;font-weight:600;font-display:swap;src:url(/fonts/inter-latin-600-normal.woff2) format("woff2")}@font-face{font-family:"Inter";font-style:normal;font-weight:700;font-display:swap;src:url(/fonts/inter-latin-700-normal.woff2) format("woff2")}@font-face{font-family:"Inter";font-style:normal;font-weight:800;font-display:swap;src:url(/fonts/inter-latin-800-normal.woff2) format("woff2")}@font-face{font-family:"IBM Plex Mono";font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/ibm-plex-mono-latin-400-normal.woff2) format("woff2")}@font-face{font-family:"IBM Plex Mono";font-style:normal;font-weight:500;font-display:swap;src:url(/fonts/ibm-plex-mono-latin-500-normal.woff2) format("woff2")}</style>
 ${extraHead || ""}<script>
 (function(){try{var t=localStorage.getItem('invest.theme.v1');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);document.documentElement.classList.toggle('dark',t!=='light');}var l=localStorage.getItem('invest.lang.v1');if(l==='en'||l==='es')document.documentElement.setAttribute('lang',l);}catch(e){}})();
 </script>
@@ -200,13 +200,13 @@ function topbar(ctaHref, ctaLabel, active) {
       <a id="nav-perfil" href="/perfil/" class="atm-btn hidden min-[380px]:inline-flex items-center rounded-lg px-2 py-1.5 font-sans text-xs no-underline sm:px-2.5" data-i18n="navProfile">Perfil</a>
       <div class="relative" id="lang-picker">
         <button type="button" id="lang-btn" class="atm-btn inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 font-sans text-xs sm:px-2.5" title="Idioma" aria-label="Idioma" aria-haspopup="listbox" aria-expanded="false">
-          <img id="lang-flag" src="https://flagcdn.com/w20/es.png" width="16" height="12" alt="" class="rounded-sm"/>
+          <img id="lang-flag" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 3'%3E%3Cpath fill='%23c60b1e' d='M0 0h4v3H0z'/%3E%3Cpath fill='%23ffc400' d='M0 .75h4v1.5H0z'/%3E%3C/svg%3E" width="16" height="12" alt="" class="rounded-sm"/>
           <span id="lang-code">ES</span>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
         </button>
         <div id="lang-menu" class="lang-menu" role="listbox" hidden>
-          <button type="button" class="lang-option" role="option" data-lang="es" aria-selected="true"><img src="https://flagcdn.com/w20/es.png" width="16" height="12" alt="" class="rounded-sm"/><span>Español</span></button>
-          <button type="button" class="lang-option" role="option" data-lang="en" aria-selected="false"><img src="https://flagcdn.com/w20/gb.png" width="16" height="12" alt="" class="rounded-sm"/><span>English</span></button>
+          <button type="button" class="lang-option" role="option" data-lang="es" aria-selected="true"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 3'%3E%3Cpath fill='%23c60b1e' d='M0 0h4v3H0z'/%3E%3Cpath fill='%23ffc400' d='M0 .75h4v1.5H0z'/%3E%3C/svg%3E" width="16" height="12" alt="" class="rounded-sm"/><span>Español</span></button>
+          <button type="button" class="lang-option" role="option" data-lang="en" aria-selected="false"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 45'%3E%3CclipPath id='c'%3E%3Cpath d='M0 0h60v45H0z'/%3E%3C/clipPath%3E%3Cg clip-path='url(%23c)'%3E%3Cpath fill='%23012169' d='M0 0h60v45H0z'/%3E%3Cpath stroke='%23fff' stroke-width='9' d='M0 0l60 45M60 0L0 45'/%3E%3Cpath stroke='%23C8102E' stroke-width='4' d='M0 0l60 45M60 0L0 45'/%3E%3Cpath stroke='%23fff' stroke-width='15' d='M30 0v45M0 22.5h60'/%3E%3Cpath stroke='%23C8102E' stroke-width='9' d='M30 0v45M0 22.5h60'/%3E%3C/g%3E%3C/svg%3E" width="16" height="12" alt="" class="rounded-sm"/><span>English</span></button>
         </div>
       </div>
       <button type="button" id="theme-btn" class="atm-btn inline-flex h-8 w-8 items-center justify-center rounded-lg" title="Cambiar tema" aria-label="Cambiar tema">
@@ -356,7 +356,7 @@ function themeScript() {
     var pack=I18N[lang]||I18N.es;
     var flag=document.getElementById('lang-flag');
     var code=document.getElementById('lang-code');
-    if(flag) flag.src=lang==='en'?'https://flagcdn.com/w20/gb.png':'https://flagcdn.com/w20/es.png';
+    if(flag){var fo=document.querySelector('.lang-option[data-lang="'+lang+'"] img');if(fo)flag.src=fo.getAttribute('src');}
     if(code) code.textContent=lang.toUpperCase();
     document.querySelectorAll('.lang-option').forEach(function(opt){
       opt.setAttribute('aria-selected', opt.getAttribute('data-lang')===lang ? 'true':'false');

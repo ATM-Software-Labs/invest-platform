@@ -25,6 +25,8 @@ if (fs.existsSync(localEnv)) for (const line of fs.readFileSync(localEnv, "utf8"
 // Workers Builds has no build variables, so the live widget key is the default. Override with TURNSTILE_SITEKEY.
 const TURNSTILE_SITEKEY = process.env.TURNSTILE_SITEKEY || "0x4AAAAAAFPPcyCR1BCpeR5_";
 const ICON = fs.readFileSync(D + "/icon.png").toString("base64");
+// Self-hosted fonts (fontsource 5.3, latin subset, OFL): served from /fonts/*.woff2, immutable.
+const FONTS = Object.fromEntries(fs.readdirSync(D + "/fonts").filter((f) => f.endsWith(".woff2")).map((f) => [f, fs.readFileSync(D + "/fonts/" + f).toString("base64")]));
 const homeJs = read("profile-shared.js") + "\n" + read("home-app.js");
 const perfilJs = read("profile-shared.js") + "\n" + read("perfil-app.js");
 const quoteShared = read("quote-shared.js");
@@ -355,7 +357,11 @@ const asciiJsonTop = (str) => JSON.stringify(str).replace(/[\u007f-\uffff]/g, (c
 let api = read("worker-quote.js").replace(/"cache-control":\s*"no-store"\s*}\s*}\);\n}\nasync function html/, (m) => m);
 api = api.replace(/"cache-control":"no-store"/g, '"cache-control":"no-cache, max-age=0, must-revalidate"');
 let sub = read("worker-sub.js").replace("__TURNSTILE_SITEKEY__", TURNSTILE_SITEKEY);
-const cssRoute = `if (url.pathname === "/assets/app.css") {
+const cssRoute = `if (url.pathname.startsWith("/fonts/") && FONTS[url.pathname.slice(7)]) {
+      const bin = Uint8Array.from(atob(FONTS[url.pathname.slice(7)]), (c) => c.charCodeAt(0));
+      return new Response(bin, { headers: { "content-type": "font/woff2", "cache-control": "public, max-age=31536000, immutable", "access-control-allow-origin": "*" } });
+    }
+    if (url.pathname === "/assets/app.css") {
       return new Response(BLOCKS[0].replace(/^<style>/, "").replace(/<\\/style>$/, ""), { headers: { "content-type": "text/css; charset=utf-8", "cache-control": "public, max-age=31536000, immutable" } });
     }`;
 if (!sub.includes("/*__CSS_ROUTE__*/")) throw new Error("css marker missing");
@@ -378,7 +384,7 @@ const htmlFn = `async function html(page, path) {
   let text = page.replace(/<!--B(\\d+)-->/g, function (m, i) { return BLOCKS[+i]; });
   if (path) text = text.split('<a href="' + path + '" data-i18n="nav').join('<a href="' + path + '" aria-current="page" data-i18n="nav');
   text = withSeo(text, path || "/");
-  return new Response(text, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-cache, max-age=0, must-revalidate", "x-content-type-options": "nosniff", "referrer-policy": "strict-origin-when-cross-origin" } });
+  return new Response(text, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-cache, max-age=0, must-revalidate", "x-content-type-options": "nosniff", "referrer-policy": "strict-origin-when-cross-origin", "strict-transport-security": "max-age=63072000; includeSubDomains" } });
 }`;
 const hs = api.indexOf("async function html(");
 const he = api.indexOf("\n}\n", hs) + 3;
@@ -386,7 +392,7 @@ if (hs < 0 || he < 3) throw new Error("html() not found");
 api = api.slice(0, hs) + htmlFn + "\n" + api.slice(he);
 let out = "const PAGES = {\n" + Object.entries(dedup).map(([p, h]) => `${JSON.stringify(p)}:${asciiJson(h)}`).join(",\n") + "\n};\n";
 out += "const BLOCKS = [\n" + BLOCKS.map(asciiJson).join(",\n") + "\n];\n";
-out += `const ICON = "${ICON}";\n` + api + "\n" + sub;
+out += `const ICON = "${ICON}";\nconst FONTS = ${JSON.stringify(FONTS)};\n` + api + "\n" + sub;
 for (let i = 0; i < out.length; i++) if (out.charCodeAt(i) > 127) throw new Error("non-ascii at " + i + " ctx=" + JSON.stringify(out.slice(i - 40, i + 10)));
 fs.writeFileSync(OUT + "/worker.js", out);
 fs.rmSync(twDir, { recursive: true, force: true });
