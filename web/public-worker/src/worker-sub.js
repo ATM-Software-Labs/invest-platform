@@ -298,7 +298,7 @@ function withSeo(text, path) {
   const t = seoAttr(title), d = seoAttr(desc), img = SITE_ORIGIN + "/og-image.png";
   const tags = [
     '<link rel="canonical" href="' + url + '"/>',
-    path === "/confirmado/" ? '<meta name="robots" content="noindex, follow"/>' : '<meta name="robots" content="index, follow, max-image-preview:large"/>',
+    (path === "/confirmado/" || path === "/404/") ? '<meta name="robots" content="noindex, follow"/>' : '<meta name="robots" content="index, follow, max-image-preview:large"/>',
     '<meta property="og:type" content="website"/>',
     '<meta property="og:site_name" content="INVEST \u00b7 Trujillo Mingorance"/>',
     '<meta property="og:locale" content="es_ES"/>',
@@ -353,8 +353,14 @@ export default {
       }
       path += "/";
     }
-    const b64 = PAGES[path];
-    if (!b64) return new Response("Not found", { status: 404 });
+    const b64 = path === "/404/" ? null : PAGES[path];
+    if (!b64) {
+      if (!PAGES["/404/"]) return new Response("Not found", { status: 404 });
+      const nf = await html(PAGES["/404/"], "/404/");
+      const h = new Headers(nf.headers);
+      h.set("x-robots-tag", "noindex, follow");
+      return new Response(request.method === "HEAD" ? null : nf.body, { status: 404, headers: h });
+    }
     return html(b64, path);
   },
 };

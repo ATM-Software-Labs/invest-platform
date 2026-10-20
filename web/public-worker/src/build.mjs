@@ -286,6 +286,16 @@ ${script(perfilJs)}
       crumb: "INVEST \u203a SUSCRIPCI\u00d3N", crumbKey: "crumbSubscribe", h1: "Gracias, suscripci\u00f3n confirmada",
       inner: prose(`<p>Tu direcci\u00f3n ya est\u00e1 en las listas que marcaste. Cada correo incluye un enlace para darte de baja o cambiar de lista.</p><p><em>English:</em> your subscription is confirmed. Every email includes a link to unsubscribe or change lists.</p><p><a href="/">Volver a INVEST</a> \u00b7 <a href="/modelos/">Modelos mentales</a></p>`),
     }),
+    "/404/": page({
+      title: "P\u00e1gina no encontrada \u00b7 INVEST", description: "Esta direcci\u00f3n no existe o se ha movido.",
+      crumb: "INVEST \u203a 404", h1: "P\u00e1gina no encontrada", h1Key: "nfH1",
+      lead: "Esta direcci\u00f3n no existe o se ha movido.", leadKey: "nfLead",
+      inner: `    <div class="mt-8 flex flex-wrap gap-3">
+      <a href="/" class="inline-flex rounded-full bg-pill px-5 py-2.5 font-sans text-sm font-semibold text-white no-underline transition-all hover:brightness-110" data-i18n="nfHome">Volver a INVEST</a>
+      <a href="/markets/" class="inline-flex rounded-full border border-line px-5 py-2.5 font-sans text-sm font-semibold text-ink no-underline hover:border-accent">Markets Briefing</a>
+      <a href="/modelos/" class="inline-flex rounded-full border border-line px-5 py-2.5 font-sans text-sm font-semibold text-ink no-underline hover:border-accent" data-i18n="nfModels">Modelos mentales</a>
+    </div>`,
+    }),
     "/aviso-legal/": page({ title: "Aviso legal \u00b7 INVEST", description: "Informacion societaria y descargo de responsabilidad de invest.trujillomingorance.com.", crumb: "INVEST \u203a CUMPLIMIENTO", crumbKey: "crumbCompliance", h1: "Aviso legal", date: "Ultima actualizacion: 20 de septiembre de 2026", legalNote: true, inner: prose(avisoBody) }),
     "/privacidad/": page({ title: "Privacidad \u00b7 INVEST", description: "Informacion sobre el tratamiento de datos personales en invest.trujillomingorance.com.", crumb: "INVEST \u203a CUMPLIMIENTO", crumbKey: "crumbCompliance", h1: "Politica de privacidad", date: "\u00daltima actualizaci\u00f3n: 6 de octubre de 2026", legalNote: true, inner: prose(privBody) }),
     "/cookies/": page({ title: "Cookies \u00b7 INVEST", description: "Informacion sobre cookies y almacenamiento local de invest.trujillomingorance.com.", crumb: "INVEST \u203a CUMPLIMIENTO", crumbKey: "crumbCompliance", h1: "Cookies y almacenamiento", date: "\u00daltima actualizaci\u00f3n: 6 de octubre de 2026", legalNote: true, inner: prose(cookiesBody) }),
