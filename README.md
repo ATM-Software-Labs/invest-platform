@@ -1,28 +1,37 @@
 <p align="center">
-  <img src="docs/og-image.png" alt="INVEST: comparador de acciones, ETF, índices y cripto" width="720">
+  <img src="docs/banner.png" alt="INVEST — Compara activos con datos públicos" width="100%" />
 </p>
 
-# INVEST · Comparador de activos e investigación de inversiones
+<p align="center">
+  <strong>Investigación y comparación de acciones, ETF, índices, cripto y materias primas por ticker, nombre o ISIN, con cotizaciones y cifras 10-K de la SEC.</strong><br/>
+  <em>Open asset research and comparison (Spanish-first): quotes, SEC 10-K figures, a transparent Munger checklist and the Markets Digest newsletter. Not financial advice.</em>
+</p>
 
-**INVEST** es una plataforma abierta de **investigación y comparación de inversiones**: consulta y compara
-**acciones, ETF, índices, criptomonedas y materias primas** por **ticker, nombre o ISIN**, con **cotizaciones**,
-cifras de los informes anuales **10-K de la SEC**, un **checklist Munger** transparente y el boletín
-**Markets Digest**.
+<p align="center">
+  <a href="https://invest.trujillomingorance.com"><b>invest.trujillomingorance.com</b></a> ·
+  <a href="https://invest.trujillomingorance.com/comparar/">Comparador</a> ·
+  <a href="#aviso-legal">Aviso legal</a> ·
+  <a href="LICENSE">Licencia MIT</a>
+</p>
 
-🌐 **Web:** <https://invest.trujillomingorance.com> · **Comparador:** <https://invest.trujillomingorance.com/comparar/>
+<p align="center">
+  <img alt="Licencia MIT" src="https://img.shields.io/badge/licencia-MIT-10B981" />
+  <img alt="Cloudflare Workers" src="https://img.shields.io/badge/Cloudflare-Workers%20%2B%20KV-F38020?logo=cloudflare&logoColor=white" />
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-Vitest-111827" />
+  <img alt="No es asesoramiento" src="https://img.shields.io/badge/aviso-no%20es%20asesoramiento-047857" />
+</p>
 
-> ⚠️ Información general y educativa. **No es asesoramiento financiero** ni una recomendación personalizada
-> (ver [Aviso](#aviso-legal)).
+> Información general y educativa. **No es asesoramiento financiero** ni una recomendación personalizada (ver [Aviso legal](#aviso-legal)).
 
-<p align="center"><img src="docs/comparador.png" alt="Comparador de activos de INVEST" width="820"></p>
+---
 
-**English summary.** INVEST is an open investment research and asset comparison platform (Spanish-first).
-Look up and compare stocks, ETFs, indices, crypto and commodities by ticker, company name or ISIN, with live
-quotes, SEC 10-K figures, a transparent Munger checklist and the *Markets Digest* newsletter. The public site
-runs on a Cloudflare Worker; the repo also contains a TypeScript market-data backend (Fastify / Workers) and a
-Next.js terminal. General information only, not financial advice.
+## Capturas
 
-## Funcionalidades
+| Portada | Comparador |
+|:-:|:-:|
+| <img src="docs/screenshots/desktop.png" width="420" alt="Portada de INVEST en escritorio" /> | <img src="docs/comparador.png" width="420" alt="Comparador de activos" /> |
+
+## Funciones
 
 - **Comparador de activos** (`/comparar/`): 2 o 3 activos lado a lado (precio, mercado, tipo, ingresos,
   resultado neto, márgenes, flujo de caja libre, efectivo y deuda). Sin ranking ni recomendaciones.
@@ -40,6 +49,18 @@ Next.js terminal. General information only, not financial advice.
 
 ## Arquitectura
 
+```mermaid
+flowchart LR
+  U["Navegador"] --> W["Cloudflare Worker «invest»<br/>páginas pre-renderizadas + /api/*"]
+  W --> Y["Yahoo Finance<br/>cotizaciones y búsqueda"]
+  W --> SEC["SEC EDGAR<br/>XBRL 10-K"]
+  W --> KV[("KV · SUBSCRIBERS")]
+  W --> TS["Turnstile"]
+  W --> BR["Brevo<br/>doble opt-in"]
+```
+
+### Componentes
+
 | Componente | Ruta | Qué hace | Despliegue |
 | --- | --- | --- | --- |
 | **Web pública** (en producción) | [`web/public-worker/`](web/public-worker/README.md) | Páginas pre-renderizadas, `/api/quote`, `/api/search`, `/api/subscribe`, sitemap/robots. Un único módulo ES generado en `dist/worker.js`. | Cloudflare Worker `invest` (ruta `invest.trujillomingorance.com/*`) |
@@ -49,7 +70,7 @@ Next.js terminal. General information only, not financial advice.
 Datos de la web pública: cotizaciones y búsqueda de símbolos de **Yahoo Finance**, cifras anuales de **SEC EDGAR
 (XBRL 10-K)**. Las respuestas de error distinguen «sin resultado» de «fuente de datos no disponible».
 
-> ℹ️ Producción sirve el bundle de `web/public-worker/`. Workers Builds (`npm run build` y
+> Producción sirve el bundle de `web/public-worker/`. Workers Builds (`npm run build` y
 > `npx wrangler deploy` en la raíz) usa [`wrangler.toml`](wrangler.toml): Worker `invest`,
 > el KV `SUBSCRIBERS` y el dominio `invest.trujillomingorance.com`. `keep_vars` deja las
 > variables del panel. Los secretos no están en el archivo. El terminal Next.js sigue en
@@ -172,3 +193,5 @@ pueden estar retrasados, incompletos o ser erróneos.
 
 - General: [soporte@trujillomingorance.com](mailto:soporte@trujillomingorance.com)
 - Seguridad: [security@trujillomingorance.com](mailto:security@trujillomingorance.com) (ver [SECURITY.md](SECURITY.md))
+
+<p align="center"><sub>© 2026 ATM Software Labs · <a href="https://trujillomingorance.com">trujillomingorance.com</a></sub></p>
