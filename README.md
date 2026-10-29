@@ -109,7 +109,8 @@ También: `docker compose up --build`.
 
 | Nombre | Tipo | Uso |
 | --- | --- | --- |
-| `SUBSCRIBERS` | KV | Límite de peticiones, enfriamiento por correo e ids de Brevo en caché (`<KV_NAMESPACE_ID>`). |
+| `SUBSCRIBE_RL` | Rate Limiting | 5 intentos de suscripción por IP cada 60 s (`[[ratelimits]]`). No escribe en KV y se comprueba antes de Turnstile. |
+| `SUBSCRIBERS` | KV | Enfriamiento por correo e ids de Brevo en caché (`<KV_NAMESPACE_ID>`). Las escrituras ocurren solo después de Turnstile. |
 | `BREVO_API_KEY` | secreto | Necesario para activar el formulario de suscripción. |
 | `TURNSTILE_SECRET` | secreto | Verificación de Turnstile en el servidor. |
 | `TURNSTILE_SITEKEY` | build | Clave pública de Turnstile (se incrusta en el bundle). |

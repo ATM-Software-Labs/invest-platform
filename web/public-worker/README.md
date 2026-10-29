@@ -46,7 +46,8 @@ npx wrangler deploy -c wrangler.toml
 
 | Name | Kind | Purpose |
 | --- | --- | --- |
-| `SUBSCRIBERS` | KV binding (`<KV_NAMESPACE_ID>`) | Rate-limit counters (hashed IP, 1 h TTL), per-address cooldown (hashed email, 15 min TTL), cached Brevo folder/list/template ids. |
+| `SUBSCRIBE_RL` | Rate Limiting binding (`[[ratelimits]]`, Wrangler >= 4.36) | 5 subscribe attempts per hashed IP per 60 seconds, per Cloudflare location. Checked before Turnstile and does not write to KV. `namespace_id` is an account-unique integer (`582741` in the example); it is not created in the dashboard. |
+| `SUBSCRIBERS` | KV binding (`<KV_NAMESPACE_ID>`) | Per-address cooldown (hashed email, 15 min TTL) and cached Brevo folder/list/template ids. Written only after Turnstile succeeds (cooldown only after the double opt-in is accepted). |
 | `BREVO_API_KEY` | secret | **Required** to enable the form. Without it `/api/subscribe/status` reports `enabled:false` and the UI shows "Suscripcion disponible pronto". |
 | `TURNSTILE_SECRET` | secret | Server-side Turnstile verification (action `subscribe`). |
 | `TURNSTILE_SITEKEY` | build-time | Public Turnstile site key, baked into the bundle and returned by `/api/subscribe/status`. |
