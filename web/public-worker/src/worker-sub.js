@@ -13,7 +13,6 @@ const DOI_TEMPLATE_NAME = "INVEST - Confirmacion doble opt-in";
 const DOI_REDIRECT = SITE_ORIGIN + "/confirmado/";
 const BREVO_FOLDER_NAME = "Trujillo Mingorance";
 const EMAIL_COOLDOWN = 900; // seconds between DOI mails to the same address
-const RL_LIMIT = 5; // attempts per IP per hour
 const STREAMS = {
   markets: { list: "Markets Digest", env: "BREVO_LIST_MARKETS" },
   invest: { list: "INVEST Notas", env: "BREVO_LIST_INVEST" }
@@ -67,13 +66,16 @@ async function verifyTurnstile(secret, token, ip) {
   if (data.action && data.action !== "subscribe") return { ok: false, codes: ["bad-action"] };
   return { ok: true, codes: [] };
 }
+// Per-IP attempt limit via the Workers Rate Limiting binding (SUBSCRIBE_RL in wrangler.toml).
+// Must not touch KV: this runs before Turnstile, and a KV put here let an unauthenticated
+// burst exhaust the account-wide free-plan put quota. The binding only allows a period of
+// 10 or 60 seconds, so the window is 5 attempts per 60s per location (not 5 per hour).
 async function rateLimited(env, ip) {
-  const hour = Math.floor(Date.now() / 3600000);
-  const key = "rl:" + (await sha256hex("invest-rl|" + (ip || "unknown"))).slice(0, 32) + ":" + hour;
-  const cur = parseInt((await env.SUBSCRIBERS.get(key)) || "0", 10) || 0;
-  if (cur >= RL_LIMIT) return true;
-  await env.SUBSCRIBERS.put(key, String(cur + 1), { expirationTtl: 3600 });
-  return false;
+  const limiter = env && env.SUBSCRIBE_RL;
+  if (!limiter || typeof limiter.limit !== "function") return false;
+  const key = (await sha256hex("invest-rl|" + (ip || "unknown"))).slice(0, 32);
+  const result = await limiter.limit({ key: key });
+  return !result || result.success !== true;
 }
 
 // ---- Brevo API (key only from the Worker secret BREVO_API_KEY) ----

@@ -8,8 +8,21 @@ compatibility_flags = ["nodejs_compat"]
 
 # routes = [{ pattern = "<INVEST_HOSTNAME>", custom_domain = true }]
 
-# KV: rate-limit counters (hashed IP, 1 h TTL), per-address cooldown (hashed email, 15 min TTL)
-# and cached Brevo ids (cfg:brevo:folder, cfg:brevo:list:*, cfg:brevo:doi).
+# Subscribe attempts: 5 per hashed IP per 60s per Cloudflare location, before Turnstile.
+# The Workers Rate Limiting binding does not write to KV. namespace_id is an integer you
+# choose, unique in the account (not a KV id, nothing to create in the dashboard).
+# Requires Wrangler >= 4.36. Period must be 10 or 60.
+# https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/
+[[ratelimits]]
+name = "SUBSCRIBE_RL"
+namespace_id = "582741"
+
+  [ratelimits.simple]
+  limit = 5
+  period = 60
+
+# KV: per-address cooldown (hashed email, 15 min TTL) and cached Brevo ids
+# (cfg:brevo:folder, cfg:brevo:list:*, cfg:brevo:doi). Not used for rate limiting.
 [[kv_namespaces]]
 binding = "SUBSCRIBERS"
 id = "<KV_NAMESPACE_ID>"

@@ -11,6 +11,20 @@ compatibility_flags = ["nodejs_compat"]
 workers_dev = true
 keep_vars = true
 
+# Límite de POST /api/subscribe: 5 intentos por IP cada 60 s, por ubicación de Cloudflare.
+# Sustituye al contador en KV (rl:*). Ese put ocurría antes de Turnstile y un ataque
+# podía agotar la cuota gratuita de escrituras KV de toda la cuenta (1.000/día).
+# namespace_id es un entero elegido por nosotros, único en la cuenta; no es un namespace
+# de KV y no hay que crearlo en el panel. Requiere Wrangler >= 4.36.
+# https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/
+[[ratelimits]]
+name = "SUBSCRIBE_RL"
+namespace_id = "582741"
+
+  [ratelimits.simple]
+  limit = 5
+  period = 60
+
 [[kv_namespaces]]
 binding = "SUBSCRIBERS"
 id = "5557a9b8144342688d877a78a7136a92"
