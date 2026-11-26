@@ -91,7 +91,7 @@ Datos de mercado: **Yahoo Finance** (el mismo gráfico público que ya usa `/api
 
 ### Despliegue (no lo lanza este cambio)
 
-El CI actual sigue siendo el Worker:
+Las pull requests ejecutan `npx wrangler preview`. Ese comando, en CI, exige el bloque vacío `[previews]` de `wrangler.toml`. `workers.dev` no cambia. El CI de producción sigue siendo el Worker:
 
 ```bash
 npm run build          # tsc + hub estático + web/public-worker/dist/worker.js

@@ -21,8 +21,12 @@ describe("market guard", () => {
     expect(deny(req("/index.php", "Mozilla/5.0"))?.status).toBe(404);
   });
 
-  it("lets a browser through and does not block the newsletter route", () => {
+  it("lets a browser, search crawlers and link unfurlers through", () => {
     expect(deny(req("/api/ohlcv?symbol=AAPL", "Mozilla/5.0"))).toBeNull();
+    expect(deny(req("/api/quote?q=AAPL", "Mozilla/5.0 (compatible; Googlebot/2.1)"))).toBeNull();
+    expect(deny(req("/api/search?q=apple", "Mozilla/5.0 AppleWebKit (KHTML, like Gecko); compatible; GPTBot/1.0"))).toBeNull();
+    expect(deny(req("/", "ClaudeBot/1.0"))).toBeNull();
+    expect(deny(req("/", "Twitterbot/1.0"))).toBeNull();
     expect(deny(req("/api/subscribe", ""))).toBeNull();
   });
 

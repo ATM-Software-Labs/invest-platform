@@ -2,6 +2,9 @@
 
 const SCAN = /wp-|[/\\]\.env|\.env\b|\.php\b|xmlrpc|\/\.git|\/\.aws|\/\.svn|phpmyadmin/i;
 const BAD_UA = /(sqlmap|nikto|nmap|masscan|zgrab|nuclei|acunetix|nessus|wpscan|dirbuster|gobuster|scrapy|semrushbot|ahrefsbot|petalbot|bytespider|dotbot|mj12bot)/i;
+// Crawlers and link unfurlers must reach HTML and /api even if a later rule
+// would treat a generic bot as hostile. robots.txt is unchanged.
+const ALLOW_UA = /(googlebot|google-inspectiontool|storebot-google|adsbot-google|mediapartners-google|bingbot|gptbot|chatgpt-user|oai-searchbot|claudebot|claude-user|claude-searchbot|anthropic-ai|twitterbot|facebookexternalhit|facebot|linkedinbot|slackbot|discordbot|whatsapp|telegrambot|pinterestbot|redditbot|embedly|quora link preview|applebot)/i;
 // Subscribe stays exempt: the existing worker tests (and real browsers behind some proxies)
 // must keep reaching the newsletter route. Market-data routes are not exempt.
 const UA_EXEMPT = /^\/api\/(?:subscribe|newsletter)(?:\/|$)/;
@@ -16,6 +19,7 @@ export function isBadUa(ua) {
   if (ua == null) return true;
   const s = String(ua).trim();
   if (!s) return true;
+  if (ALLOW_UA.test(s)) return false;
   return BAD_UA.test(s);
 }
 

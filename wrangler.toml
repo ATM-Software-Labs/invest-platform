@@ -11,6 +11,11 @@ compatibility_flags = ["nodejs_compat"]
 workers_dev = true
 keep_vars = true
 
+# Workers Builds runs `npx wrangler preview` on pull requests. In CI that
+# command exits unless this block exists. Empty on purpose: production
+# bindings stay on `wrangler deploy`, and workers.dev is unchanged.
+[previews]
+
 # Límite de POST /api/subscribe: 5 intentos por IP cada 60 s, por ubicación de Cloudflare.
 # Sustituye al contador en KV (rl:*). Ese put ocurría antes de Turnstile y un ataque
 # podía agotar la cuota gratuita de escrituras KV de toda la cuenta (1.000/día).
