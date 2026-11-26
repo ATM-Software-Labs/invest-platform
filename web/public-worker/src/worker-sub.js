@@ -320,7 +320,7 @@ function withSeo(text, path) {
   return text.replace(anchor[0], anchor[0] + "\n" + tags);
 }
 
-const SITEMAP_PATHS = ["/", "/charts", "/cartera", "/ranking", "/legal", "/munger/", "/modelos/", "/glosario/", "/comparar/", "/suscribirse/", "/markets/", "/ensayos/redundancia-de-efectivo/", "/perfil/", "/aviso-legal/", "/privacidad/", "/cookies/"];
+const SITEMAP_PATHS = ["/", "/pulse/", "/charts/", "/cartera/", "/ranking/", "/legal/", "/munger/", "/modelos/", "/glosario/", "/comparar/", "/suscribirse/", "/markets/", "/ensayos/redundancia-de-efectivo/", "/perfil/", "/aviso-legal/", "/privacidad/", "/cookies/"];
 async function edgeCache(request, ttlSeconds, produce) {
   if (request.method !== "GET" && request.method !== "HEAD") return produce();
   const cache = typeof caches !== "undefined" ? caches.default : null;
@@ -346,10 +346,9 @@ async function edgeCache(request, ttlSeconds, produce) {
   return out;
 }
 
-function isHubPath(pathname) {
-  return pathname === "/" || /^\/(charts|cartera|ranking|legal|activo)\/?$/.test(pathname)
-    || pathname === "/hub.js" || pathname === "/hub.css" || pathname === "/chart.js" || pathname === "/store.js"
-    || pathname.startsWith("/shared/") || pathname.startsWith("/vendor/");
+function isAssetPath(pathname) {
+  return pathname === "/hub.js" || pathname === "/hub.css" || pathname === "/chart.js" || pathname === "/store.js"
+    || pathname.startsWith("/shared/") || pathname.startsWith("/vendor/") || pathname === "/favicon.png";
 }
 function sitemapXml() {
   return '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
@@ -379,19 +378,9 @@ export default {
       return url.pathname === "/api/ohlcv" ? globalThis.__hubMarket.handleOhlcv(request) : globalThis.__hubMarket.handlePulse(request);
     }
     if (url.pathname.startsWith("/api/")) return json({ ok: false, error: "not_found" }, 404);
-    if (env && env.ASSETS && isHubPath(url.pathname)) {
-      const assetUrl = new URL(request.url);
-      if (url.pathname === "/" || /^\/(charts|cartera|ranking|legal|activo)\/?$/.test(url.pathname)) assetUrl.pathname = "/index.html";
-      const asset = await env.ASSETS.fetch(new Request(assetUrl.toString(), { method: "GET" }));
-      if (asset && asset.status !== 404) {
-        if (assetUrl.pathname === "/index.html") {
-          const headers = new Headers(asset.headers);
-          headers.set("cache-control", "public, max-age=0, must-revalidate");
-          headers.set("cdn-cache-control", "public, max-age=60");
-          return new Response(request.method === "HEAD" ? null : asset.body, { status: asset.status, headers: headers });
-        }
-        return asset;
-      }
+    if (env && env.ASSETS && isAssetPath(url.pathname)) {
+      const asset = await env.ASSETS.fetch(new Request(request.url, { method: "GET" }));
+      if (asset && asset.status !== 404) return asset;
     }
     if (request.method !== "GET" && request.method !== "HEAD") return new Response("Not found", { status: 404 });
     let path = url.pathname;

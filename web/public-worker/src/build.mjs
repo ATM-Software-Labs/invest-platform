@@ -12,6 +12,10 @@ import { PROSE, mungerIntro, mungerBody, modelosBody, glosarioBody, privBody, co
 
 const D = path.dirname(fileURLToPath(import.meta.url)); // web/public-worker/src
 const ROOT = path.resolve(D, "..");
+const assetV = (() => {
+  try { return fs.readFileSync(path.resolve(ROOT, "..", "..", "public", "asset-version.txt"), "utf8").trim() || "1"; }
+  catch { return "1"; }
+})();
 const OUT = path.join(ROOT, "dist");
 fs.mkdirSync(OUT, { recursive: true });
 const read = (f) => fs.readFileSync(D + "/" + f, "utf8").replace(/\r\n/g, "\n");
@@ -305,6 +309,33 @@ ${script(perfilJs)}
       inner: prose(essayIntro + essayBodyEs + essayBodyEn),
     }),
   };
+  const feature = (pathname, title, description) => `${head(title, description, '<link rel="stylesheet" href="/hub.css?v=' + assetV + '"/>')}
+<body class="min-h-screen bg-bg text-ink font-sans antialiased flex flex-col">
+${topbar("/", "Analizar", pathname)}
+<main class="flex-1">
+  <div class="mx-auto max-w-content px-4 py-8 sm:px-5">
+    <div id="hub-app">
+      <form id="search-form" role="search" class="relative">
+        <label for="q" class="sr-only">Buscar</label>
+        <input id="q" type="search" autocomplete="off" spellcheck="false" enterkeyhint="search" placeholder="Ticker, nombre o ISIN" class="atm-input w-full rounded-xl px-3 py-2.5 font-mono text-sm"/>
+        <div id="hits" hidden></div>
+      </form>
+      <div id="tags" class="mt-3 flex flex-wrap gap-2" role="group" aria-label="Tipo de activo"></div>
+      <div id="hub-main"></div>
+    </div>
+  </div>
+</main>
+${footer()}
+${themeScript()}
+<script type="module" src="/hub.js?v=${assetV}"></script>
+</body>
+</html>`;
+  pages["/pulse/"] = feature("/pulse/", "Pulse \u00b7 INVEST", "Radar de acci\u00f3n, zonas de compra y bit\u00e1cora. Informaci\u00f3n general, no es asesoramiento.");
+  pages["/charts/"] = feature("/charts/", "Gr\u00e1ficos \u00b7 INVEST", "Gr\u00e1fico de un activo con rangos, velas, volumen y medias. Informaci\u00f3n general, no es asesoramiento.");
+  pages["/cartera/"] = feature("/cartera/", "Cartera \u00b7 INVEST", "Notas, niveles y simulador de cartera con dinero virtual. No es asesoramiento.");
+  pages["/ranking/"] = feature("/ranking/", "Ranking \u00b7 INVEST", "M\u00e9tricas comparables de los activos seguidos. No es una recomendaci\u00f3n.");
+  pages["/legal/"] = feature("/legal/", "Afiliaci\u00f3n \u00b7 INVEST", "Aviso de afiliaci\u00f3n, simulador virtual y l\u00edmites de la herramienta.");
+  pages["/activo/"] = feature("/activo/", "Ficha \u00b7 INVEST", "Ficha de un activo con cotizaci\u00f3n y cifras p\u00fablicas. No es asesoramiento.");
   return pages;
 }
 
@@ -379,7 +410,7 @@ sub = sub.replace("/*__CSS_ROUTE__*/", cssRoute);
 
 // Dedupe blocks shared by several pages (style, theme script, header, footer, inline scripts): stored once, injected at request time.
 const asciiJson = (str) => JSON.stringify(str).replace(/[\u007f-\uffff]/g, (c) => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0"));
-const candidates = [pages["/"].match(/<style>[\s\S]*?<\/style>/)[0], themeScript(), footer(), topbar("#q", "Analizar"), topbar("/", "Analizar")];
+const candidates = [...(pages["/"].match(/<style>[\s\S]*?<\/style>/g) || []), themeScript(), footer(), topbar("#q", "Analizar"), topbar("/", "Analizar")];
 for (const h of Object.values(pages)) for (const m of h.match(/<script>[\s\S]*?<\/script>/g) || []) if (m.length > 2000 && !candidates.includes(m)) candidates.push(m);
 const BLOCKS = [];
 const dedup = {};
