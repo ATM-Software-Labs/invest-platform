@@ -86,7 +86,7 @@ const SHARED_CSS = `
   .logo-fallback{display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#f8fafc}
   .chg-up{color:#3ecf8e}.chg-down{color:#f07178}
   .trade{display:flex;gap:.35rem;flex-wrap:wrap}
-  .trade a{text-decoration:none;border-radius:999px;padding:.35rem .7rem;font-size:.75rem;font-weight:650;white-space:nowrap}
+  .trade a,.trade button{text-decoration:none;border-radius:999px;padding:.35rem .7rem;font-size:.75rem;font-weight:650;white-space:nowrap;cursor:pointer}
   .trade .buy{background:var(--pill);color:#fff}
   .trade .sell{border:1px solid var(--btn-border);color:var(--text);background:transparent}
   @media (max-width:640px){.broker-row{grid-template-columns:auto minmax(0,1fr)}.trade{grid-column:1 / -1}}

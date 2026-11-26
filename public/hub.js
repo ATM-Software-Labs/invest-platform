@@ -1,10 +1,11 @@
-import { actionReasons, fundamentalRatio, FUNDAMENTAL_FORMULA, closeness } from "/shared/indicators.js?v=e487102dc6";
-import { classifyAsset, simulatorAllowed, CLASS_LABEL, SPOT_PROXY } from "/shared/assets.js?v=e487102dc6";
-import { AFFILIATE_DISCLOSURE, RISK_WARNING, etoroHref } from "/shared/etoro.js?v=e487102dc6";
-import { madridToday, markReviewed } from "/shared/streak.js?v=e487102dc6";
-import { portfolioWeights, applyBuy, applySell, SIM_START_EUR } from "/shared/portfolio.js?v=e487102dc6";
-import { load, save, exportJson, sanitize } from "/store.js?v=e487102dc6";
-import { mountChart } from "/chart.js?v=e487102dc6";
+import { actionReasons, fundamentalRatio, FUNDAMENTAL_FORMULA, closeness } from "/shared/indicators.js?v=f9aeb8ce68";
+import { classifyAsset, simulatorAllowed, CLASS_LABEL, SPOT_PROXY } from "/shared/assets.js?v=f9aeb8ce68";
+import { AFFILIATE_DISCLOSURE, RISK_WARNING } from "/shared/etoro.js?v=f9aeb8ce68";
+import { logoUrl } from "/shared/logos.js?v=f9aeb8ce68";
+import { madridToday, markReviewed } from "/shared/streak.js?v=f9aeb8ce68";
+import { portfolioWeights, applyBuy, applySell, SIM_START_EUR } from "/shared/portfolio.js?v=f9aeb8ce68";
+import { load, save, exportJson, sanitize } from "/store.js?v=f9aeb8ce68";
+import { mountChart } from "/chart.js?v=f9aeb8ce68";
 
 const RANK = ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "JPM", "SAN.MC", "ITX.MC", "SPY", "VWCE.DE", "^GSPC", "^IBEX", "GLD", "SLV"];
 const SUGGEST = ["AAPL", "MSFT", "SAN.MC", "SPY", "GLD", "^IBEX"];
@@ -96,26 +97,19 @@ function firedAlerts() {
   }
   return hits;
 }
-const LOGO_DOMAINS = { AAPL: "apple.com", MSFT: "microsoft.com", NVDA: "nvidia.com", GOOGL: "abc.xyz", AMZN: "amazon.com", META: "meta.com", TSLA: "tesla.com", JPM: "jpmorganchase.com", "SAN.MC": "santander.com", "ITX.MC": "inditex.com", SPY: "ssga.com", GLD: "spdrgoldshares.com" };
 function logoImg(symbol) {
-  const sym = String(symbol || "");
-  const fb = LOGO_DOMAINS[sym] ? "https://www.google.com/s2/favicons?sz=128&domain=" + encodeURIComponent(LOGO_DOMAINS[sym]) : "";
-  const ini = esc(sym.replace(/[^A-Za-z0-9]/g, "").slice(0, 2) || "?");
-  return `<img class="logo" alt="" width="36" height="36" src="https://charts.trujillomingorance.com/logo/${encodeURIComponent(sym)}.png" data-fb="${esc(fb)}" data-ini="${ini}">`;
+  const src = logoUrl(symbol);
+  const ini = esc(String(symbol || "").replace(/[^A-Za-z0-9]/g, "").slice(0, 2) || "?");
+  if (!src) return `<span class="logo-fallback">${ini}</span>`;
+  return `<img class="logo" alt="" width="36" height="36" src="${src}" data-ini="${ini}">`;
 }
 function tradeLinks(symbol) {
-  const href = esc(etoroHref(symbol));
-  return `<div class="trade"><a class="buy" href="${href}" target="_blank" rel="sponsored nofollow noopener">Comprar</a><a class="sell" href="${href}" target="_blank" rel="sponsored nofollow noopener">Vender</a></div>`;
+  const sym = esc(symbol);
+  return `<div class="trade"><button type="button" class="buy" data-sim="buy" data-sym="${sym}">Comprar</button><button type="button" class="sell" data-sim="sell" data-sym="${sym}">Vender</button></div>`;
 }
 document.addEventListener("error", (e) => {
   const img = e.target;
   if (!img || !img.classList || !img.classList.contains("logo")) return;
-  if (img.dataset.fb) {
-    const next = img.dataset.fb;
-    img.dataset.fb = "";
-    img.src = next;
-    return;
-  }
   const span = document.createElement("span");
   span.className = "logo-fallback";
   span.textContent = img.dataset.ini || "?";
@@ -123,10 +117,8 @@ document.addEventListener("error", (e) => {
 }, true);
 function etoroBlock(symbol) {
   return `<div class="etoro">
+    <p class="dim">Simulador, dinero virtual, sin operaciones reales</p>
     ${tradeLinks(symbol)}
-    <p class="aff-next">${esc(AFFILIATE_DISCLOSURE)}</p>
-    <div class="warn tight">${esc(RISK_WARNING)}</div>
-    <p class="dim">La orden no se ejecuta aquí. El botón abre eToro en otra pestaña.</p>
   </div>`;
 }
 function zoneClass(price, zone) {
@@ -583,7 +575,6 @@ function paintRank(rows) {
         <td>${tradeLinks(row.symbol)}<div class="dim"><a href="/activo/?symbol=${encodeURIComponent(row.symbol)}">Ficha</a></div></td>
       </tr>`;
     }).join("") || `<tr><td colspan="8">Sin filas para este filtro.</td></tr>`}</tbody></table></div>
-    <p class="aff-next">${esc(AFFILIATE_DISCLOSURE)}</p><div class="warn tight">${esc(RISK_WARNING)}</div>
     <p class="dim">Fuerza relativa = variación del cierre a 21 sesiones y desde el primer cierre del año. Cercanía = la menor distancia absoluta al POC de 90 días o al soporte (último pivote por debajo). Caída = cierre frente al máximo del histórico diario usado (5 años). ${esc(FUNDAMENTAL_FORMULA)}</p>`;
   const rankAsOf = document.getElementById("rank-asof");
   if (rankAsOf) rankAsOf.textContent = "Actualizado " + new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
@@ -632,9 +623,8 @@ async function renderAsset(symbol) {
       </div>
       ${tradeLinks(sym)}
     </div>
-    <p class="aff-next">${esc(AFFILIATE_DISCLOSURE)}</p>
-    <div class="warn">${esc(RISK_WARNING)}</div>
-    <p class="dim">Comprar y Vender abren eToro. Esta web no envía órdenes.</p>
+    <p class="dim">Simulador, dinero virtual, sin operaciones reales</p>
+    <div id="sim-book"></div>
     ${asset.type === "blocked" ? `<p class="dim">${esc(asset.reason || "")}${asset.proxy ? " Contado: " + esc(asset.proxy) : ""}</p>` : ""}
     <div id="asset-chart"></div>
     <section class="card"><h2>10-K</h2>${note ? `<p class="dim">${esc(note)}</p>` : ""}${munger(filings)}</section>`;
@@ -642,6 +632,7 @@ async function renderAsset(symbol) {
   if (chartHost && asset.type !== "blocked") {
     mountChart(chartHost, { symbol: sym, range: "1Y", overlays: false, ath: "1" }).then((api) => { chartApi = api; }).catch(() => {});
   }
+  paintHubBook();
 }
 
 function renderLegal() {
@@ -710,6 +701,118 @@ if (form && hits) {
     runSearch(presetQ.trim());
   }
 }
+
+function showTicket(row, side) {
+  const price = Number(row && (row.price || row.regularMarketPrice)) || 0;
+  let form = document.getElementById("orden");
+  if (!form) {
+    form = document.createElement("form");
+    form.id = "orden";
+    form.className = "card";
+    form.innerHTML = `<p class="dim">Simulador, dinero virtual, sin operaciones reales</p>
+      <p id="orden-title" class="kpis"></p>
+      <p id="orden-px" class="dim"></p>
+      <div class="row"><label><input type="radio" name="orden-modo" value="eur" checked/> Importe</label><label><input type="radio" name="orden-modo" value="qty"/> Títulos</label></div>
+      <input id="orden-qty" type="number" min="0" step="any" value="1000"/>
+      <p id="orden-est" class="dim"></p>
+      <button class="btn solid" type="submit">Confirmar</button>
+      <p id="orden-msg" class="dim" role="status"></p>
+      <div id="sim-book"></div>`;
+    form.addEventListener("submit", confirmHubOrder);
+    form.querySelector("#orden-qty").addEventListener("input", estimateHub);
+    (main || document.body).prepend(form);
+  }
+  form.hidden = false;
+  form.dataset.sym = row.symbol || "";
+  form.dataset.side = side;
+  form.dataset.price = String(price);
+  form.dataset.name = row.name || row.symbol || "";
+  form.dataset.type = (row.class && row.class.type) || row.type || "stock";
+  const title = document.getElementById("orden-title");
+  const px = document.getElementById("orden-px");
+  if (title) title.textContent = (side === "sell" ? "Vender " : "Comprar ") + (row.symbol || "");
+  if (px) px.textContent = price > 0 ? "Precio de mercado " + nf(price) + " " + (row.currency || "") : "Sin precio";
+  const msg = document.getElementById("orden-msg");
+  if (msg) msg.textContent = "";
+  estimateHub();
+  paintHubBook();
+}
+function estimateHub() {
+  const form = document.getElementById("orden");
+  const est = document.getElementById("orden-est");
+  if (!form || !est) return;
+  const price = Number(form.dataset.price);
+  const n = Number(form.querySelector("#orden-qty").value);
+  const mode = (form.querySelector('input[name="orden-modo"]:checked') || {}).value || "eur";
+  if (!(price > 0) || !(n > 0)) { est.textContent = ""; return; }
+  est.textContent = mode === "qty" ? "Importe " + nf(n * price) : "Títulos " + nf(n / price, 4);
+}
+function confirmHubOrder(e) {
+  e.preventDefault();
+  const form = document.getElementById("orden");
+  const msg = document.getElementById("orden-msg");
+  if (!form) return;
+  const price = Number(form.dataset.price);
+  const symbol = form.dataset.sym;
+  const side = form.dataset.side === "sell" ? "sell" : "buy";
+  const mode = (form.querySelector('input[name="orden-modo"]:checked') || {}).value || "eur";
+  const n = Number(form.querySelector("#orden-qty").value);
+  if (!(price > 0)) { if (msg) msg.textContent = "No hay precio de mercado."; return; }
+  if (!(n > 0)) { if (msg) msg.textContent = "Escribe un importe o un número de títulos."; return; }
+  const euros = mode === "qty" ? n * price : n;
+  const shares = mode === "qty" ? n : n / price;
+  const asset = classifyAsset(symbol, form.dataset.type, form.dataset.name);
+  if (side === "buy" && !simulatorAllowed(asset)) { if (msg) msg.textContent = asset.reason || "No se puede simular."; return; }
+  const trades = [...(state.simulator.trades || [])];
+  const next = side === "buy"
+    ? applyBuy(state.simulator, { symbol, name: form.dataset.name, type: asset.type, price }, euros)
+    : applySell(state.simulator, symbol, shares, price);
+  if (!next.ok) {
+    if (msg) msg.textContent = next.error === "efectivo" ? "No hay efectivo suficiente." : next.error === "posicion" ? "No tienes tantos títulos." : "No se ha podido anotar.";
+    return;
+  }
+  trades.push({ t: new Date().toISOString(), side, symbol, shares, price, amount: Math.round(euros * 100) / 100 });
+  next.simulator.trades = trades.slice(-80);
+  state.simulator = next.simulator;
+  persist();
+  if (msg) msg.textContent = side === "sell" ? "Venta simulada anotada." : "Compra simulada anotada.";
+  paintHubBook();
+}
+function paintHubBook() {
+  const host = document.getElementById("sim-book");
+  if (!host) return;
+  const sim = state.simulator;
+  let invested = 0;
+  const lines = (sim.positions || []).map((p) => {
+    const px = priceOf(p.symbol) || p.avg;
+    const pnl = (px - p.avg) * p.shares;
+    invested += px * p.shares;
+    return `${esc(p.symbol)} · ${nf(p.shares, 4)} tít. · medio ${nf(p.avg)} · ahora ${nf(px)} · PyG ${nf(pnl)}`;
+  });
+  const equity = sim.cash + invested;
+  const hist = (sim.trades || []).slice(-8).reverse().map((t) => `${t.side === "sell" ? "Venta" : "Compra"} ${esc(t.symbol)} · ${nf(t.shares, 4)} a ${nf(t.price)}`);
+  host.innerHTML = `<p class="dim">Efectivo ${nf(sim.cash)} · Valor ${nf(equity)} · Resultado ${nf(equity - SIM_START_EUR)}</p>
+    ${lines.map((l) => `<p class="dim">${l}</p>`).join("")}
+    ${hist.map((l) => `<p class="dim">${l}</p>`).join("")}
+    <button type="button" class="btn" id="sim-reset">Reiniciar simulador</button>`;
+  const reset = document.getElementById("sim-reset");
+  if (reset) reset.addEventListener("click", () => {
+    state.simulator = { cash: SIM_START_EUR, positions: [], trades: [] };
+    persist();
+    paintHubBook();
+  });
+}
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-sim]");
+  if (!b) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const symbol = b.dataset.sym;
+  const side = b.dataset.sim === "sell" ? "sell" : "buy";
+  const known = quotes.get(symbol);
+  if (known && known.price > 0) { showTicket(known, side); return; }
+  pulse([symbol]).then((rows) => showTicket(rows[0] || { symbol, price: 0, name: symbol }, side)).catch(() => showTicket({ symbol, price: 0, name: symbol }, side));
+});
 
 function pollMs() {
   const hour = Number(new Intl.DateTimeFormat("en-GB", { hour: "2-digit", hourCycle: "h23", timeZone: "Europe/Madrid" }).format(new Date()));
