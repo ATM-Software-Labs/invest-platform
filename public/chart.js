@@ -1,4 +1,4 @@
-import { ema, poc, swingPivots, relevantLevels, trendProjection } from "/shared/indicators.js";
+import { ema, poc, swingPivots, relevantLevels, trendProjection } from "/shared/indicators.js?v=e487102dc6";
 
 const RANGES = ["1D", "5D", "1M", "6M", "YTD", "1Y", "5Y", "MAX"];
 const TZ = {};

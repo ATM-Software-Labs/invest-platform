@@ -1,10 +1,10 @@
-import { actionReasons, fundamentalRatio, FUNDAMENTAL_FORMULA, closeness } from "/shared/indicators.js";
-import { classifyAsset, simulatorAllowed, CLASS_LABEL, SPOT_PROXY } from "/shared/assets.js";
-import { AFFILIATE_DISCLOSURE, RISK_WARNING, etoroHref } from "/shared/etoro.js";
-import { madridToday, markReviewed } from "/shared/streak.js";
-import { portfolioWeights, applyBuy, applySell, SIM_START_EUR } from "/shared/portfolio.js";
-import { load, save, exportJson, sanitize } from "/store.js";
-import { mountChart } from "/chart.js";
+import { actionReasons, fundamentalRatio, FUNDAMENTAL_FORMULA, closeness } from "/shared/indicators.js?v=e487102dc6";
+import { classifyAsset, simulatorAllowed, CLASS_LABEL, SPOT_PROXY } from "/shared/assets.js?v=e487102dc6";
+import { AFFILIATE_DISCLOSURE, RISK_WARNING, etoroHref } from "/shared/etoro.js?v=e487102dc6";
+import { madridToday, markReviewed } from "/shared/streak.js?v=e487102dc6";
+import { portfolioWeights, applyBuy, applySell, SIM_START_EUR } from "/shared/portfolio.js?v=e487102dc6";
+import { load, save, exportJson, sanitize } from "/store.js?v=e487102dc6";
+import { mountChart } from "/chart.js?v=e487102dc6";
 
 const RANK = ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "JPM", "SAN.MC", "ITX.MC", "SPY", "VWCE.DE", "^GSPC", "^IBEX", "GLD", "SLV"];
 const SUGGEST = ["AAPL", "MSFT", "SAN.MC", "SPY", "GLD", "^IBEX"];
@@ -109,8 +109,8 @@ function zoneClass(price, zone) {
 function renderNav() {
   const path = location.pathname.replace(/\/$/, "") || "/";
   document.querySelectorAll("#nav a").forEach((a) => {
-    const href = a.getAttribute("href");
-    const on = href === "/" ? path === "/" : path === href;
+    const href = (a.getAttribute("href") || "/").replace(/\/$/, "") || "/";
+    const on = href === "/" ? path === "/" : path === href || path.startsWith(href + "/");
     if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
   });
 }
@@ -228,7 +228,7 @@ function paintZones() {
   const host = document.getElementById("zones");
   if (!host) return;
   const rows = state.zones;
-  host.innerHTML = `<table><thead><tr><th>Ticker</th><th>Precio compra</th><th>Precio recorte</th><th>Notas de tesis</th><th></th></tr></thead><tbody>
+  host.innerHTML = `<div class="scroll"><table><thead><tr><th>Ticker</th><th>Precio compra</th><th>Precio recorte</th><th>Notas de tesis</th><th></th></tr></thead><tbody>
     ${rows.map((z, i) => {
       const px = priceOf(z.symbol);
       return `<tr class="${zoneClass(px, z)}" data-i="${i}">
@@ -239,7 +239,7 @@ function paintZones() {
         <td><button type="button" data-del="${i}" class="btn">Quitar</button>${px ? `<div class="dim">${nf(px)}</div>` : ""}</td>
       </tr>`;
     }).join("") || `<tr><td colspan="5" class="muted">Sin zonas. Añade una fila.</td></tr>`}
-  </tbody></table>`;
+  </tbody></table></div>`;
   host.querySelectorAll("input").forEach((input) => input.addEventListener("change", () => {
     const tr = input.closest("tr");
     const i = +tr.dataset.i;
@@ -532,7 +532,7 @@ function paintRank(rows) {
     return (av - bv) * sortDir;
   });
   const th = (key, label) => `<th><button type="button" data-sort="${key}">${label}${sortKey === key ? (sortDir < 0 ? " ↓" : " ↑") : ""}</button></th>`;
-  host.innerHTML = `<table><thead><tr>
+  host.innerHTML = `<div class="scroll"><table><thead><tr>
       ${th("symbol", "Ticker")}${th("rs1m", "Fuerza 1M")}${th("rsYtd", "Fuerza YTD")}${th("close", "Cerca de soporte / POC")}${th("drawdown", "Caída desde máximos")}${th("fundamental", "Ratio fundamental")}<th></th>
     </tr></thead><tbody>${sorted.map((row) => {
       const ratio = ratios.get(row.symbol);
@@ -546,7 +546,7 @@ function paintRank(rows) {
         <td>${ratio ? nf(ratio.value * 100, 1) + " % " + (ratio.basis === "fcf" ? "FCF" : "neto") : (/^[A-Z]{1,5}$/.test(row.symbol) ? "…" : "n/d")}</td>
         <td>${etoroBlock(row.symbol)}<div class="dim"><a href="/activo?symbol=${encodeURIComponent(row.symbol)}">Ficha</a></div></td>
       </tr>`;
-    }).join("") || `<tr><td colspan="7">Sin filas para este filtro.</td></tr>`}</tbody></table>
+    }).join("") || `<tr><td colspan="7">Sin filas para este filtro.</td></tr>`}</tbody></table></div>
     <p class="dim">Fuerza relativa = variación del cierre a 21 sesiones y desde el primer cierre del año. Cercanía = la menor distancia absoluta al POC de 90 días o al soporte (último pivote por debajo). Caída = cierre frente al máximo del histórico diario usado (5 años). ${esc(FUNDAMENTAL_FORMULA)}</p>`;
   host.querySelectorAll("[data-sort]").forEach((b) => b.addEventListener("click", () => {
     if (sortKey === b.dataset.sort) sortDir *= -1; else { sortKey = b.dataset.sort; sortDir = sortKey === "close" ? 1 : -1; }
@@ -649,6 +649,12 @@ async function runSearch(q) {
     }
     go("/charts?symbol=" + encodeURIComponent(sym));
   }));
+}
+
+const presetQ = new URLSearchParams(location.search).get("q");
+if (presetQ && presetQ.trim().length >= 2 && (location.pathname.replace(/\/$/, "") || "/") === "/") {
+  document.getElementById("q").value = presetQ.trim();
+  runSearch(presetQ.trim());
 }
 
 render();
