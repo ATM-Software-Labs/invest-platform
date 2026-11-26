@@ -721,7 +721,7 @@
     img.alt = "";
     img.width = 36;
     img.height = 36;
-    img.src = "https://charts.trujillomingorance.com/logo/" + slug + ".png";
+    img.src = "/logo/" + slug + ".png";
     img.addEventListener("error", function () {
       var span = document.createElement("span");
       span.className = "logo-fallback";
