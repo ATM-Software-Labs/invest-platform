@@ -12,6 +12,12 @@ const ORIGIN = "https://invest.trujillomingorance.com";
 const PULSE_TTL = 1200;
 const PULSE_RANGE = { interval: "1d", yahooRange: "5y", ttl: PULSE_TTL, intra: false };
 
+// caches.default expires from this header. Intraday presets use 900s, daily+ use 3600s.
+export function cacheHeader(seconds) {
+  const n = seconds | 0;
+  return "public, max-age=" + n + ", s-maxage=" + n;
+}
+
 function json(data, status, cacheControl) {
   return new Response(JSON.stringify(data), {
     status,
@@ -120,7 +126,7 @@ export async function handleOhlcv(request) {
     source: "yahoo",
     bars: parsed.bars,
   };
-  const res = json(body, 200, "public, max-age=" + preset.ttl);
+  const res = json(body, 200, cacheHeader(preset.ttl));
   await cachePut(key, res);
   return request.method === "HEAD" ? new Response(null, { status: 200, headers: res.headers }) : res;
 }
@@ -135,7 +141,7 @@ async function pulseSymbol(symbol) {
   try { parsed = await loadChart(symbol, PULSE_RANGE); } catch { return { symbol, error: "upstream_unavailable" }; }
   if (!parsed || !parsed.bars.length) return { symbol, error: "not_found" };
   const row = rowFromBars(symbol, parsed);
-  const res = json(row, 200, "public, max-age=" + PULSE_TTL);
+  const res = json(row, 200, cacheHeader(PULSE_TTL));
   await cachePut(key, res);
   return row;
 }
@@ -153,7 +159,7 @@ export async function handlePulse(request) {
   if (hit) return hit;
   const rows = await Promise.all(symbols.map((s) => pulseSymbol(s)));
   const body = { ok: true, ttl: PULSE_TTL, symbols, rows, source: "yahoo" };
-  const res = json(body, 200, "public, max-age=" + PULSE_TTL);
+  const res = json(body, 200, cacheHeader(PULSE_TTL));
   await cachePut(key, res);
   return request.method === "HEAD" ? new Response(null, { status: 200, headers: res.headers }) : res;
 }

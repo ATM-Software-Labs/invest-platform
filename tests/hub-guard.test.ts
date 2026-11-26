@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { deny, normalizeSymbol, parseSymbolList } from "../shared/guard.js";
+import { cacheHeader } from "../shared/market.js";
 import { parseYahooChart } from "../shared/yahoo.js";
 
 function req(path: string, ua: string | null) {
@@ -40,6 +41,14 @@ describe("market guard", () => {
     expect(parseSymbolList("msft,AAPL,msft").symbols).toEqual(["AAPL", "MSFT"]);
     expect(parseSymbolList("AAPL,nope space").ok).toBe(false);
     expect(parseSymbolList(Array.from({ length: 31 }, (_, i) => "A" + i).join(",")).error).toBe("too_many_symbols");
+  });
+});
+
+describe("cache headers", () => {
+  it("uses 15 min intraday, 60 min daily and 20 min pulse", () => {
+    expect(cacheHeader(900)).toBe("public, max-age=900, s-maxage=900");
+    expect(cacheHeader(3600)).toBe("public, max-age=3600, s-maxage=3600");
+    expect(cacheHeader(1200)).toBe("public, max-age=1200, s-maxage=1200");
   });
 });
 

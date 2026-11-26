@@ -337,7 +337,7 @@ async function edgeCache(request, ttlSeconds, produce) {
   }
   const res = await produce();
   const headers = new Headers(res.headers);
-  if (res.ok) headers.set("cache-control", "public, max-age=" + ttlSeconds);
+  if (res.ok) headers.set("cache-control", "public, max-age=" + ttlSeconds + ", s-maxage=" + ttlSeconds);
   headers.set("x-cache", "MISS");
   const out = new Response(request.method === "HEAD" ? null : res.body, { status: res.status, headers: headers });
   if (cache && res.ok) {
