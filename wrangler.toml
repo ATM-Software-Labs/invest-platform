@@ -38,3 +38,10 @@ custom_domain = true
 [[kv_namespaces]]
 binding = "MARKETS_KV"
 id = "6e77435f7d0a460cbd92ef217d5910c7"
+
+# Hub estático (HTML, JS, CSS y Lightweight Charts). No va dentro del script:
+# el bundle anterior pasaba de 1 MiB y el despliegue del plan gratuito lo rechaza.
+[assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = true

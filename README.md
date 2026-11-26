@@ -106,7 +106,7 @@ Cloudflare Pages, si más adelante se mueve el sitio (tampoco se despliega desde
 | Directorio de salida | `public` |
 | Functions | `functions/` (`/api/ohlcv`, `/api/pulse`, `/api/quote`, `/api/search`) |
 
-`/api/ohlcv` y `/api/pulse` cachean con `caches.default` (15 min intradía, 60 min diario, 20 min el pulso) y cortan antes de trabajar un user-agent vacío, un escáner conocido o rutas `wp-*`, `.env` y `.php`. `robots.txt` y el favicon se sirven como estáticos.
+`/api/ohlcv` y `/api/pulse` cachean con `caches.default` (15 min intradía, 60 min diario, 20 min el pulso) y cortan antes de trabajar un user-agent vacío, un escáner conocido o rutas `wp-*`, `.env` y `.php`. El HTML, el JS y Lightweight Charts van en `[assets]` (`public/`), no dentro del script: el plan gratuito rechaza un Worker de más de 1 MiB. `robots.txt` y el favicon se sirven como estáticos.
 
 ### Redirección de charts.trujillomingorance.com
 
