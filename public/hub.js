@@ -96,11 +96,37 @@ function firedAlerts() {
   }
   return hits;
 }
+const LOGO_DOMAINS = { AAPL: "apple.com", MSFT: "microsoft.com", NVDA: "nvidia.com", GOOGL: "abc.xyz", AMZN: "amazon.com", META: "meta.com", TSLA: "tesla.com", JPM: "jpmorganchase.com", "SAN.MC": "santander.com", "ITX.MC": "inditex.com", SPY: "ssga.com", GLD: "spdrgoldshares.com" };
+function logoImg(symbol) {
+  const sym = String(symbol || "");
+  const fb = LOGO_DOMAINS[sym] ? "https://www.google.com/s2/favicons?sz=128&domain=" + encodeURIComponent(LOGO_DOMAINS[sym]) : "";
+  const ini = esc(sym.replace(/[^A-Za-z0-9]/g, "").slice(0, 2) || "?");
+  return `<img class="logo" alt="" width="36" height="36" src="https://charts.trujillomingorance.com/logo/${encodeURIComponent(sym)}.png" data-fb="${esc(fb)}" data-ini="${ini}">`;
+}
+function tradeLinks(symbol) {
+  const href = esc(etoroHref(symbol));
+  return `<div class="trade"><a class="buy" href="${href}" target="_blank" rel="sponsored nofollow noopener">Comprar</a><a class="sell" href="${href}" target="_blank" rel="sponsored nofollow noopener">Vender</a></div>`;
+}
+document.addEventListener("error", (e) => {
+  const img = e.target;
+  if (!img || !img.classList || !img.classList.contains("logo")) return;
+  if (img.dataset.fb) {
+    const next = img.dataset.fb;
+    img.dataset.fb = "";
+    img.src = next;
+    return;
+  }
+  const span = document.createElement("span");
+  span.className = "logo-fallback";
+  span.textContent = img.dataset.ini || "?";
+  img.replaceWith(span);
+}, true);
 function etoroBlock(symbol) {
   return `<div class="etoro">
-    <a class="btn ghost" href="${esc(etoroHref(symbol))}" target="_blank" rel="sponsored nofollow noopener">Ver activo en eToro</a>
+    ${tradeLinks(symbol)}
     <p class="aff-next">${esc(AFFILIATE_DISCLOSURE)}</p>
     <div class="warn tight">${esc(RISK_WARNING)}</div>
+    <p class="dim">La orden no se ejecuta aquí. El botón abre eToro en otra pestaña.</p>
   </div>`;
 }
 function zoneClass(price, zone) {
@@ -215,11 +241,15 @@ async function paintRadar() {
   if (!signals.length) {
     host.innerHTML = `<p class="empty" id="radar-empty">Sin señales hoy: mantener plan</p>`;
   } else {
-    host.innerHTML = `<div class="grid" id="radar-signals">${signals.map(({ row, reasons }) => `<button class="sig" data-open="${esc(row.symbol)}" type="button">
-      <strong>${esc(row.symbol)} <span class="tag">${esc(row.class && row.class.label || "")}</span></strong>
-      <span class="${cls(row.changePct)}">${nf(row.price)} ${esc(row.currency || "")} · ${pct(row.changePct)}</span>
-      <span class="dim">${reasons.map((r) => esc(r.text)).join(" · ")}</span>
-    </button>`).join("")}</div>`;
+    host.innerHTML = `<div class="grid" id="radar-signals">${signals.map(({ row, reasons }) => `<div class="broker-row">
+      ${logoImg(row.symbol)}
+      <button class="sig" data-open="${esc(row.symbol)}" type="button">
+        <strong>${esc(row.symbol)} <span class="tag">${esc(row.class && row.class.label || "")}</span></strong>
+        <span class="${cls(row.changePct)}">${nf(row.price)} ${esc(row.currency || "")} · ${pct(row.changePct)}</span>
+        <span class="dim">${reasons.map((r) => esc(r.text)).join(" · ")}</span>
+      </button>
+      ${tradeLinks(row.symbol)}
+    </div>`).join("")}</div>`;
     host.querySelectorAll("[data-open]").forEach((b) => b.addEventListener("click", () => go("/charts/?symbol=" + encodeURIComponent(b.dataset.open) + "&overlays=1")));
   }
   paintZones();
@@ -442,14 +472,14 @@ async function paintSim() {
     <div class="kpis"><div><span class="dim">Valor</span><br/><b>${nf(w.equity, 0)} €</b></div><div><span class="dim">Efectivo</span><br/><b>${nf(state.simulator.cash, 0)} €</b></div></div>
     <div class="weights" aria-hidden="true">${bar}</div>
     <p class="dim">Peso por clase: ${legend || "sin posiciones"} · efectivo ${nf(w.cashPct, 1)} %</p>
-    <div class="scroll"><table><thead><tr><th>Ticker</th><th>Clase</th><th>Títulos</th><th>Precio</th><th>Peso</th><th></th></tr></thead><tbody>
+    <div class="scroll"><table><thead><tr><th></th><th>Ticker</th><th>Clase</th><th>Títulos</th><th>Precio</th><th>Peso</th><th></th></tr></thead><tbody>
       ${state.simulator.positions.map((p) => {
         const px = prices[p.symbol];
         const mv = px * p.shares;
         const weight = w.equity > 0 ? (mv / w.equity) * 100 : 0;
         const show = filter === "all" || p.type === filter;
-        return show ? `<tr><td><a href="/charts/?symbol=${encodeURIComponent(p.symbol)}&overlays=1">${esc(p.symbol)}</a></td><td>${esc(CLASS_LABEL[p.type] || p.type)}</td><td>${nf(p.shares, 4)}</td><td>${nf(px)}</td><td>${nf(weight, 1)} %</td><td><button class="btn" data-sell="${esc(p.symbol)}" type="button">Vender</button></td></tr>` : "";
-      }).join("") || `<tr><td colspan="6" class="muted">Sin posiciones${filter !== "all" ? " de este tipo" : ""}.</td></tr>`}
+        return show ? `<tr><td>${logoImg(p.symbol)}</td><td><a href="/activo/?symbol=${encodeURIComponent(p.symbol)}">${esc(p.symbol)}</a></td><td>${esc(CLASS_LABEL[p.type] || p.type)}</td><td>${nf(p.shares, 4)}</td><td class="${cls((px - p.avg) / (p.avg || 1))}">${nf(px)}</td><td>${nf(weight, 1)} %</td><td>${tradeLinks(p.symbol)}<button class="btn" data-sell="${esc(p.symbol)}" type="button">Quitar simulación</button></td></tr>` : "";
+      }).join("") || `<tr><td colspan="7" class="muted">Sin posiciones${filter !== "all" ? " de este tipo" : ""}.</td></tr>`}
     </tbody></table></div>`;
   host.querySelectorAll("[data-sell]").forEach((b) => b.addEventListener("click", () => {
     const p = state.simulator.positions.find((x) => x.symbol === b.dataset.sell);
@@ -537,29 +567,33 @@ function paintRank(rows) {
     return (av - bv) * sortDir;
   });
   const th = (key, label) => `<th><button type="button" data-sort="${key}">${label}${sortKey === key ? (sortDir < 0 ? " ↓" : " ↑") : ""}</button></th>`;
-  host.innerHTML = `<div class="scroll"><table><thead><tr>
-      ${th("symbol", "Ticker")}${th("rs1m", "Fuerza 1M")}${th("rsYtd", "Fuerza YTD")}${th("close", "Cerca de soporte / POC")}${th("drawdown", "Caída desde máximos")}${th("fundamental", "Ratio fundamental")}<th></th>
+  host.innerHTML = `<p class="dim" id="rank-asof"></p><div class="scroll"><table><thead><tr>
+      <th></th>${th("symbol", "Ticker")}${th("rs1m", "Fuerza 1M")}${th("rsYtd", "Fuerza YTD")}${th("close", "Cerca de soporte / POC")}${th("drawdown", "Caída desde máximos")}${th("fundamental", "Ratio fundamental")}<th></th>
     </tr></thead><tbody>${sorted.map((row) => {
       const ratio = ratios.get(row.symbol);
       const near = closeness(row);
       return `<tr class="rowlink" data-sym="${esc(row.symbol)}">
+        <td>${logoImg(row.symbol)}</td>
         <td><strong>${esc(row.symbol)}</strong><div class="dim">${esc(row.name || "")} · <span class="tag">${esc(row.class.label)}</span></div></td>
         <td class="${cls(row.rs1m)}">${pct(row.rs1m)}</td>
         <td class="${cls(row.rsYtd)}">${pct(row.rsYtd)}</td>
         <td>${near == null ? "n/d" : nf(near, 2) + " %"}</td>
         <td class="${cls(row.drawdown)}">${pct(row.drawdown)}</td>
         <td>${ratio ? nf(ratio.value * 100, 1) + " % " + (ratio.basis === "fcf" ? "FCF" : "neto") : (/^[A-Z]{1,5}$/.test(row.symbol) ? "…" : "n/d")}</td>
-        <td>${etoroBlock(row.symbol)}<div class="dim"><a href="/activo/?symbol=${encodeURIComponent(row.symbol)}">Ficha</a></div></td>
+        <td>${tradeLinks(row.symbol)}<div class="dim"><a href="/activo/?symbol=${encodeURIComponent(row.symbol)}">Ficha</a></div></td>
       </tr>`;
-    }).join("") || `<tr><td colspan="7">Sin filas para este filtro.</td></tr>`}</tbody></table></div>
+    }).join("") || `<tr><td colspan="8">Sin filas para este filtro.</td></tr>`}</tbody></table></div>
+    <p class="aff-next">${esc(AFFILIATE_DISCLOSURE)}</p><div class="warn tight">${esc(RISK_WARNING)}</div>
     <p class="dim">Fuerza relativa = variación del cierre a 21 sesiones y desde el primer cierre del año. Cercanía = la menor distancia absoluta al POC de 90 días o al soporte (último pivote por debajo). Caída = cierre frente al máximo del histórico diario usado (5 años). ${esc(FUNDAMENTAL_FORMULA)}</p>`;
+  const rankAsOf = document.getElementById("rank-asof");
+  if (rankAsOf) rankAsOf.textContent = "Actualizado " + new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
   host.querySelectorAll("[data-sort]").forEach((b) => b.addEventListener("click", () => {
     if (sortKey === b.dataset.sort) sortDir *= -1; else { sortKey = b.dataset.sort; sortDir = sortKey === "close" ? 1 : -1; }
     paintRank(rows);
   }));
   host.querySelectorAll("tr[data-sym]").forEach((tr) => tr.addEventListener("click", (e) => {
     if (e.target.closest("a, button, .etoro")) return;
-    go("/charts/?symbol=" + encodeURIComponent(tr.dataset.sym) + "&overlays=1");
+    go("/activo/?symbol=" + encodeURIComponent(tr.dataset.sym));
   }));
 }
 
@@ -588,13 +622,26 @@ async function renderAsset(symbol) {
   const host = document.getElementById("asset");
   if (!host) return;
   host.innerHTML = `
-    <p class="kpis"><b>${esc(name)}</b></p>
-    <p>${esc(sym)} · <span class="tag">${esc(asset.label || "")}</span></p>
-    <p class="kpis"><b>${nf(price)}</b> <span class="${cls(change)}">${pct(change)}</span></p>
+    <div class="broker-row">
+      ${logoImg(sym)}
+      <div>
+        <p class="kpis"><b>${esc(name)}</b></p>
+        <p>${esc(sym)} · <span class="tag">${esc(asset.label || "")}</span></p>
+        <p class="kpis"><b id="asset-px">${nf(price)}</b> <span id="asset-chg" class="${cls(change)}">${pct(change)}</span></p>
+        <p class="dim" id="asset-asof">Actualizado ${esc(new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }))}</p>
+      </div>
+      ${tradeLinks(sym)}
+    </div>
+    <p class="aff-next">${esc(AFFILIATE_DISCLOSURE)}</p>
+    <div class="warn">${esc(RISK_WARNING)}</div>
+    <p class="dim">Comprar y Vender abren eToro. Esta web no envía órdenes.</p>
     ${asset.type === "blocked" ? `<p class="dim">${esc(asset.reason || "")}${asset.proxy ? " Contado: " + esc(asset.proxy) : ""}</p>` : ""}
-    <p><a href="/charts/?symbol=${encodeURIComponent(sym)}&overlays=1">Abrir gráfico</a></p>
-    ${etoroBlock(sym)}
+    <div id="asset-chart"></div>
     <section class="card"><h2>10-K</h2>${note ? `<p class="dim">${esc(note)}</p>` : ""}${munger(filings)}</section>`;
+  const chartHost = document.getElementById("asset-chart");
+  if (chartHost && asset.type !== "blocked") {
+    mountChart(chartHost, { symbol: sym, range: "1Y", overlays: false, ath: "1" }).then((api) => { chartApi = api; }).catch(() => {});
+  }
 }
 
 function renderLegal() {
@@ -664,4 +711,20 @@ if (form && hits) {
   }
 }
 
+function pollMs() {
+  const hour = Number(new Intl.DateTimeFormat("en-GB", { hour: "2-digit", hourCycle: "h23", timeZone: "Europe/Madrid" }).format(new Date()));
+  const day = new Intl.DateTimeFormat("en-GB", { weekday: "short", timeZone: "Europe/Madrid" }).format(new Date());
+  if (day === "Sat" || day === "Sun" || hour < 8 || hour >= 22) return 300000;
+  return 45000;
+}
+let pollTimer = 0;
+function armPoll() {
+  clearTimeout(pollTimer);
+  pollTimer = setTimeout(() => {
+    const path = location.pathname.replace(/\/$/, "") || "/";
+    if (document.visibilityState === "visible" && (path === "/pulse" || path === "/ranking" || path === "/activo" || path === "/cartera")) render();
+    armPoll();
+  }, pollMs());
+}
 render();
+armPoll();

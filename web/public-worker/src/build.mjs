@@ -92,7 +92,7 @@ ${topbar("#q", "Analizar", "/")}
     <h1 class="mt-3 max-w-2xl text-3xl font-bold tracking-tight text-ink md:text-4xl" data-i18n="heroTitle">Analizar un activo con criterios medibles</h1>
     <p class="mt-3 max-w-2xl text-[15px] leading-relaxed text-mute" data-i18n="heroLead">Precio de mercado y, cuando existen, cifras anuales de EE.&nbsp;UU. (SEC). Checklist Munger transparente. No es una recomendacion de compra ni de venta.</p>
 
-    <form id="buscar" action="/api/quote" method="get" role="search" class="mt-8">
+    <form id="buscar" action="/" method="get" role="search" class="mt-8">
       <label for="q" class="mb-2 block font-sans text-xs font-medium text-mute" data-i18n="searchLabel">Ticker o simbolo</label>
       <div class="relative">
         <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-dim" aria-hidden="true">
@@ -117,6 +117,16 @@ ${topbar("#q", "Analizar", "/")}
     </div>
 
     <p class="mt-3 font-sans text-xs text-dim" data-i18n="disclaimer">Informacion general, no es una recomendacion personal ni un servicio de inversion.</p>
+
+    <section id="mercado" class="mt-8" aria-label="Mercado">
+      <div class="flex items-end justify-between gap-3">
+        <h2 class="font-sans text-sm font-semibold text-ink">Mercado</h2>
+        <p id="mercado-asof" class="font-mono text-[11px] text-dim"></p>
+      </div>
+      <div id="mercado-list" class="mt-3 space-y-2"></div>
+      <p class="mt-3 font-sans text-[11px] leading-relaxed text-dim">Divulgaci\u00f3n de afiliado: Algunos enlaces dirigen a eToro. Si te registras a trav\u00e9s de ellos, puedo recibir una comisi\u00f3n sin coste adicional para ti.</p>
+      <p class="mt-2 font-sans text-[11px] leading-relaxed text-mute">Las inversiones conllevan riesgos, incluida la posible p\u00e9rdida del capital invertido. El rendimiento pasado y los resultados simulados no son indicativos de resultados futuros. Contenido meramente informativo y educativo; no constituye asesoramiento financiero ni recomendaci\u00f3n de inversi\u00f3n.</p>
+    </section>
     <div id="estado" class="mt-5 hidden rounded-xl border border-line bg-elev px-4 py-3 font-sans text-sm text-mute fade-in" role="status" aria-live="polite"></div>
 
     <div id="resultado" class="mt-6 space-y-4" aria-live="polite"></div>

@@ -79,8 +79,17 @@ const SHARED_CSS = `
   @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
   html{scroll-behavior:smooth;scroll-padding-top:5.5rem}
   [id]{scroll-margin-top:7rem}
-  .atm-subnav{display:flex;gap:.25rem;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
-  .atm-subnav::-webkit-scrollbar{display:none}
+  .atm-subnav{display:flex;flex-wrap:wrap;gap:.35rem}
+  .broker-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:.65rem;align-items:center;border:1px solid var(--btn-border);background:var(--elev);border-radius:1rem;padding:.65rem .75rem}
+  .broker-row a.name{color:var(--text);text-decoration:none;font-weight:650}
+  .logo,.logo-fallback{width:36px;height:36px;border-radius:10px;object-fit:cover;background:#1e293b;display:block}
+  .logo-fallback{display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#f8fafc}
+  .chg-up{color:#3ecf8e}.chg-down{color:#f07178}
+  .trade{display:flex;gap:.35rem;flex-wrap:wrap}
+  .trade a{text-decoration:none;border-radius:999px;padding:.35rem .7rem;font-size:.75rem;font-weight:650;white-space:nowrap}
+  .trade .buy{background:var(--pill);color:#fff}
+  .trade .sell{border:1px solid var(--btn-border);color:var(--text);background:transparent}
+  @media (max-width:640px){.broker-row{grid-template-columns:auto minmax(0,1fr)}.trade{grid-column:1 / -1}}
   .atm-subnav a{flex-shrink:0;color:var(--muted);text-decoration:none;font-size:.75rem;font-weight:500;padding:.4rem .65rem;border-radius:.5rem;border:1px solid transparent;transition:color .15s ease,background-color .15s ease,border-color .15s ease;white-space:nowrap}
   .atm-subnav a:hover{color:var(--text);background:var(--elev)}
   .atm-subnav a[aria-current="page"]{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);border-color:color-mix(in srgb,var(--accent) 30%,transparent);font-weight:600}
