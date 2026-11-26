@@ -375,8 +375,8 @@ export default {
     if ((request.method === "GET" || request.method === "HEAD") && url.pathname.startsWith("/logo/") && url.pathname.endsWith(".png")) {
       const slug = decodeURIComponent(url.pathname.slice(6, -4));
       if (!/^[a-z0-9-]{1,60}$/.test(slug)) return new Response("not found", { status: 404 });
-      const upstream = await fetch("https://charts.trujillomingorance.com/logo/" + slug + ".png", { headers: { "User-Agent": "Mozilla/5.0", "Accept": "image/png" } });
-      if (!upstream.ok) return new Response("not found", { status: 404, headers: { "cache-control": "public, max-age=300" } });
+      const upstream = await fetch("https://charts.trujillomingorance.com/logo/" + slug + ".png", { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36", "Accept": "image/png,image/*,*/*" } });
+      if (!upstream.ok) return new Response("not found", { status: 404, headers: { "cache-control": "no-store", "x-logo-upstream": String(upstream.status) } });
       return new Response(request.method === "HEAD" ? null : upstream.body, { headers: { "content-type": "image/png", "cache-control": "public, max-age=86400", "x-content-type-options": "nosniff" } });
     }
     if (url.pathname === "/api/quote") return edgeCache(request, 900, function () { return handleQuote(request, url); });
