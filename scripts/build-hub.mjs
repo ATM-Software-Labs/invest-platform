@@ -7,7 +7,7 @@ import { fileURLToPath } from "url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dest = path.join(root, "public", "shared");
 fs.mkdirSync(dest, { recursive: true });
-for (const name of ["indicators.js", "assets.js", "etoro.js", "streak.js", "portfolio.js"]) {
+for (const name of ["indicators.js", "assets.js", "etoro.js", "streak.js", "portfolio.js", "logos.js"]) {
   fs.copyFileSync(path.join(root, "shared", name), path.join(dest, name));
 }
 const vendor = path.join(root, "public", "vendor", "lightweight-charts.standalone.production.js");
@@ -21,7 +21,7 @@ function unstamp(text) {
 }
 const stampFiles = ["index.html", "hub.js", "chart.js"].map((name) => path.join(root, "public", name));
 const hash = crypto.createHash("sha256");
-for (const name of ["indicators.js", "assets.js", "etoro.js", "streak.js", "portfolio.js"]) {
+for (const name of ["indicators.js", "assets.js", "etoro.js", "streak.js", "portfolio.js", "logos.js"]) {
   hash.update(fs.readFileSync(path.join(dest, name)));
 }
 for (const rel of ["public/hub.css", "public/hub.js", "public/chart.js", "public/store.js"]) {

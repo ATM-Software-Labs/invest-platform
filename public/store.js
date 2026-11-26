@@ -9,7 +9,7 @@ export function emptyState() {
     streak: { last: "", count: 0 },
     checklist: { notes: "", levels: "" },
     alerts: [],
-    simulator: { cash: 100000, positions: [] },
+    simulator: { cash: 100000, positions: [], trades: [] },
   };
 }
 
@@ -73,6 +73,16 @@ export function sanitize(raw) {
         shares: Number(p && p.shares) > 0 ? Number(p.shares) : 0,
         avg: Number(p && p.avg) > 0 ? Number(p.avg) : 0,
       })).filter((p) => p.symbol && p.shares > 0 && p.avg > 0);
+    }
+    if (Array.isArray(raw.simulator.trades)) {
+      base.simulator.trades = raw.simulator.trades.slice(-80).map((t) => ({
+        t: String((t && t.t) || "").slice(0, 40),
+        side: t && t.side === "sell" ? "sell" : "buy",
+        symbol: cleanSymbol(t && t.symbol),
+        shares: Number(t && t.shares) > 0 ? Number(t.shares) : 0,
+        price: Number(t && t.price) > 0 ? Number(t.price) : 0,
+        amount: Number(t && t.amount) > 0 ? Math.round(Number(t.amount) * 100) / 100 : 0,
+      })).filter((t) => t.symbol && t.shares > 0 && t.price > 0);
     }
   }
   return base;

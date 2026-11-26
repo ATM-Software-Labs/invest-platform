@@ -124,8 +124,20 @@ ${topbar("#q", "Analizar", "/")}
         <p id="mercado-asof" class="font-mono text-[11px] text-dim"></p>
       </div>
       <div id="mercado-list" class="mt-3 space-y-2"></div>
-      <p class="mt-3 font-sans text-[11px] leading-relaxed text-dim">Divulgaci\u00f3n de afiliado: Algunos enlaces dirigen a eToro. Si te registras a trav\u00e9s de ellos, puedo recibir una comisi\u00f3n sin coste adicional para ti.</p>
-      <p class="mt-2 font-sans text-[11px] leading-relaxed text-mute">Las inversiones conllevan riesgos, incluida la posible p\u00e9rdida del capital invertido. El rendimiento pasado y los resultados simulados no son indicativos de resultados futuros. Contenido meramente informativo y educativo; no constituye asesoramiento financiero ni recomendaci\u00f3n de inversi\u00f3n.</p>
+      <p class="mt-3 font-sans text-xs font-semibold text-accent">Simulador, dinero virtual, sin operaciones reales</p>
+      <form id="orden" class="atm-card mt-3 hidden rounded-2xl p-4" hidden>
+        <p id="orden-title" class="font-sans text-sm font-semibold text-ink"></p>
+        <p id="orden-px" class="mt-1 font-mono text-xs text-dim"></p>
+        <div class="mt-3 flex flex-wrap gap-3 text-xs text-mute">
+          <label><input type="radio" name="orden-modo" value="eur" checked/> Importe</label>
+          <label><input type="radio" name="orden-modo" value="qty"/> Títulos</label>
+        </div>
+        <input id="orden-qty" class="atm-input mt-2 w-full rounded-xl px-3 py-2 font-mono text-sm" type="number" min="0" step="any" value="1000"/>
+        <p id="orden-est" class="mt-2 font-mono text-[11px] text-dim"></p>
+        <button id="orden-ok" class="mt-3 rounded-full bg-pill px-4 py-2 font-sans text-xs font-semibold text-white" type="submit">Confirmar</button>
+        <p id="orden-msg" class="mt-2 font-sans text-xs text-mute" role="status"></p>
+      </form>
+      <div id="sim-book" class="mt-4"></div>
     </section>
     <div id="estado" class="mt-5 hidden rounded-xl border border-line bg-elev px-4 py-3 font-sans text-sm text-mute fade-in" role="status" aria-live="polite"></div>
 

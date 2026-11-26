@@ -705,23 +705,24 @@
   } catch (err) {}
 
   var BOARD = ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA", "JPM", "SAN.MC", "ITX.MC", "SPY", "GLD"];
-  var DOMAINS = { AAPL: "apple.com", MSFT: "microsoft.com", NVDA: "nvidia.com", GOOGL: "abc.xyz", AMZN: "amazon.com", META: "meta.com", TSLA: "tesla.com", JPM: "jpmorganchase.com", "SAN.MC": "santander.com", "ITX.MC": "inditex.com", SPY: "ssga.com", GLD: "spdrgoldshares.com" };
-  function etoroHref(symbol) {
-    return "https://www.etoro.com/markets/" + encodeURIComponent(String(symbol || "").replace(/[^\w.\-^=]/g, ""));
-  }
+  var LOGO = { AAPL: "apple", MSFT: "microsoft", NVDA: "nvidia", GOOGL: "alphabet", AMZN: "amazon", META: "meta", TSLA: "tesla", JPM: "jpmorgan", "SAN.MC": "santander", "ITX.MC": "inditex", SAN: "santander", ITX: "inditex" };
+  var boardRows = [];
+  var ticket = null;
   function logoNode(symbol) {
+    var slug = LOGO[symbol];
+    if (!slug) {
+      var span = document.createElement("span");
+      span.className = "logo-fallback";
+      span.textContent = String(symbol).replace(/[^A-Za-z0-9]/g, "").slice(0, 2) || "?";
+      return span;
+    }
     var img = document.createElement("img");
     img.className = "logo";
     img.alt = "";
     img.width = 36;
     img.height = 36;
-    img.src = "https://charts.trujillomingorance.com/logo/" + encodeURIComponent(symbol) + ".png";
+    img.src = "https://charts.trujillomingorance.com/logo/" + slug + ".png";
     img.addEventListener("error", function () {
-      if (img.dataset.step !== "1" && DOMAINS[symbol]) {
-        img.dataset.step = "1";
-        img.src = "https://www.google.com/s2/favicons?sz=128&domain=" + encodeURIComponent(DOMAINS[symbol]);
-        return;
-      }
       var span = document.createElement("span");
       span.className = "logo-fallback";
       span.textContent = String(symbol).replace(/[^A-Za-z0-9]/g, "").slice(0, 2) || "?";
@@ -732,24 +733,143 @@
   function tradeLinks(symbol) {
     var box = document.createElement("div");
     box.className = "trade";
-    ["Comprar", "Vender"].forEach(function (label, i) {
-      var a = document.createElement("a");
-      a.className = i === 0 ? "buy" : "sell";
-      a.href = etoroHref(symbol);
-      a.target = "_blank";
-      a.rel = "sponsored nofollow noopener";
-      a.textContent = label;
-      box.appendChild(a);
+    ["buy", "sell"].forEach(function (side) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = side === "buy" ? "buy" : "sell";
+      b.textContent = side === "buy" ? "Comprar" : "Vender";
+      b.addEventListener("click", function () {
+        var row = null;
+        for (var i = 0; i < boardRows.length; i++) if (boardRows[i].symbol === symbol) row = boardRows[i];
+        openTicket(row || { symbol: symbol, price: 0, name: symbol }, side);
+      });
+      box.appendChild(b);
     });
     return box;
+  }
+  function readStore() {
+    try {
+      var o = JSON.parse(localStorage.getItem("invest-hub-v1") || "null");
+      if (o && o.version === 1) {
+        if (!o.simulator) o.simulator = { cash: 100000, positions: [], trades: [] };
+        if (!Array.isArray(o.simulator.trades)) o.simulator.trades = [];
+        if (!Array.isArray(o.simulator.positions)) o.simulator.positions = [];
+        return o;
+      }
+    } catch (e) {}
+    return { version: 1, simulator: { cash: 100000, positions: [], trades: [] } };
+  }
+  function writeSim(sim) {
+    var all = readStore();
+    all.simulator = sim;
+    localStorage.setItem("invest-hub-v1", JSON.stringify(all));
+  }
+  function livePx(symbol, fallback) {
+    for (var i = 0; i < boardRows.length; i++) if (boardRows[i].symbol === symbol && boardRows[i].price > 0) return boardRows[i].price;
+    return fallback;
+  }
+  function paintBook() {
+    var host = document.getElementById("sim-book");
+    if (!host) return;
+    var sim = readStore().simulator;
+    var invested = 0;
+    var rows = (sim.positions || []).map(function (p) {
+      var px = livePx(p.symbol, p.avg);
+      var mv = px * p.shares;
+      var pnl = (px - p.avg) * p.shares;
+      invested += mv;
+      return { p: p, px: px, mv: mv, pnl: pnl };
+    });
+    var equity = sim.cash + invested;
+    host.textContent = "";
+    var head = el("p", "font-mono text-xs text-mute", "Efectivo " + fmtMoney(sim.cash) + " · Valor " + fmtMoney(equity) + " · Resultado " + fmtMoney(equity - 100000));
+    host.appendChild(head);
+    rows.forEach(function (r) {
+      var line = el("p", "mt-1 font-mono text-[11px] text-dim", r.p.symbol + " · " + r.p.shares.toLocaleString("es-ES", { maximumFractionDigits: 4 }) + " tít. · medio " + fmtMoney(r.p.avg) + " · ahora " + fmtMoney(r.px) + " · PyG " + fmtMoney(r.pnl));
+      host.appendChild(line);
+    });
+    var hist = (sim.trades || []).slice(-8).reverse();
+    hist.forEach(function (t) {
+      host.appendChild(el("p", "mt-1 font-mono text-[11px] text-dim", (t.side === "sell" ? "Venta" : "Compra") + " " + t.symbol + " · " + Number(t.shares).toLocaleString("es-ES", { maximumFractionDigits: 4 }) + " a " + fmtMoney(t.price)));
+    });
+    var reset = el("button", "atm-btn mt-3 rounded-full px-3 py-1.5 font-sans text-xs text-ink", "Reiniciar simulador");
+    reset.type = "button";
+    reset.addEventListener("click", function () {
+      writeSim({ cash: 100000, positions: [], trades: [] });
+      paintBook();
+    });
+    host.appendChild(reset);
+  }
+  function fmtMoney(n) {
+    return Number(n || 0).toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function openTicket(row, side) {
+    ticket = { symbol: row.symbol, name: row.name || row.symbol, price: Number(row.price) || 0, side: side, type: (row.class && row.class.type) || "stock" };
+    var form = document.getElementById("orden");
+    if (!form) return;
+    form.classList.remove("hidden");
+    form.hidden = false;
+    document.getElementById("orden-title").textContent = (side === "sell" ? "Vender " : "Comprar ") + ticket.symbol;
+    document.getElementById("orden-px").textContent = ticket.price > 0 ? "Precio de mercado " + fmtMoney(ticket.price) + " " + (row.currency || "") : "Sin precio";
+    document.getElementById("orden-msg").textContent = "";
+    estimate();
+  }
+  function estimate() {
+    var est = document.getElementById("orden-est");
+    if (!est || !ticket || !(ticket.price > 0)) return;
+    var n = Number(document.getElementById("orden-qty").value);
+    var modo = (document.querySelector('input[name="orden-modo"]:checked') || {}).value || "eur";
+    if (!(n > 0)) { est.textContent = ""; return; }
+    if (modo === "qty") est.textContent = "Importe " + fmtMoney(n * ticket.price);
+    else est.textContent = "Títulos " + (n / ticket.price).toLocaleString("es-ES", { maximumFractionDigits: 4 });
+  }
+  function confirmOrder(event) {
+    event.preventDefault();
+    var msg = document.getElementById("orden-msg");
+    if (!ticket || !(ticket.price > 0)) { if (msg) msg.textContent = "No hay precio de mercado."; return; }
+    var n = Number(document.getElementById("orden-qty").value);
+    var modo = (document.querySelector('input[name="orden-modo"]:checked') || {}).value || "eur";
+    if (!(n > 0)) { if (msg) msg.textContent = "Escribe un importe o un número de títulos."; return; }
+    var euros = modo === "qty" ? n * ticket.price : n;
+    var shares = modo === "qty" ? n : n / ticket.price;
+    var store = readStore();
+    var sim = store.simulator;
+    var positions = (sim.positions || []).map(function (p) { return { symbol: p.symbol, name: p.name, type: p.type, shares: p.shares, avg: p.avg }; });
+    if (ticket.side === "buy") {
+      if (euros > sim.cash + 1e-6) { if (msg) msg.textContent = "No hay efectivo suficiente."; return; }
+      var i = -1;
+      for (var k = 0; k < positions.length; k++) if (positions[k].symbol === ticket.symbol) i = k;
+      if (i < 0) positions.push({ symbol: ticket.symbol, name: ticket.name, type: ticket.type, shares: shares, avg: ticket.price });
+      else {
+        var p = positions[i];
+        var next = p.shares + shares;
+        p.avg = (p.avg * p.shares + euros) / next;
+        p.shares = next;
+      }
+      sim.cash = Math.round((sim.cash - euros) * 100) / 100;
+    } else {
+      var j = -1;
+      for (var q = 0; q < positions.length; q++) if (positions[q].symbol === ticket.symbol) j = q;
+      if (j < 0 || positions[j].shares + 1e-9 < shares) { if (msg) msg.textContent = "No tienes tantos títulos."; return; }
+      positions[j].shares -= shares;
+      if (positions[j].shares <= 1e-8) positions.splice(j, 1);
+      sim.cash = Math.round((sim.cash + euros) * 100) / 100;
+    }
+    sim.positions = positions;
+    sim.trades = (sim.trades || []).concat([{ t: new Date().toISOString(), side: ticket.side, symbol: ticket.symbol, shares: shares, price: ticket.price, amount: Math.round(euros * 100) / 100 }]).slice(-80);
+    writeSim(sim);
+    if (msg) msg.textContent = ticket.side === "sell" ? "Venta simulada anotada." : "Compra simulada anotada.";
+    paintBook();
   }
   function paintBoard(rows) {
     var host = document.getElementById("mercado-list");
     var asof = document.getElementById("mercado-asof");
     if (!host) return;
     host.textContent = "";
-    if (!rows.length) {
+    boardRows = rows.filter(function (row) { return row && row.price > 0; });
+    if (!boardRows.length) {
       host.appendChild(el("p", "font-sans text-sm text-mute", "No se ha podido leer el mercado. Se reintenta solo."));
+      paintBook();
       return;
     }
     rows.forEach(function (row) {
@@ -777,6 +897,7 @@
       host.appendChild(line);
     });
     if (asof) asof.textContent = "Actualizado " + new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+    paintBook();
   }
   function loadBoard() {
     fetch("/api/pulse?symbols=" + encodeURIComponent(BOARD.join(",")), { headers: { Accept: "application/json" } })
@@ -801,6 +922,12 @@
   renderGrid();
   renderListsPanel();
   renderProfileSuggestions();
+  var orden = document.getElementById("orden");
+  if (orden) {
+    orden.addEventListener("submit", confirmOrder);
+    document.getElementById("orden-qty").addEventListener("input", estimate);
+    orden.querySelectorAll('input[name="orden-modo"]').forEach(function (r) { r.addEventListener("change", estimate); });
+  }
   loadBoard();
   scheduleBoard();
   document.addEventListener("invest:lang", function () { renderProfileSuggestions(); });
