@@ -320,7 +320,37 @@ function withSeo(text, path) {
   return text.replace(anchor[0], anchor[0] + "\n" + tags);
 }
 
-const SITEMAP_PATHS = ["/", "/munger/", "/modelos/", "/glosario/", "/comparar/", "/suscribirse/", "/markets/", "/ensayos/redundancia-de-efectivo/", "/perfil/", "/aviso-legal/", "/privacidad/", "/cookies/"];
+const SITEMAP_PATHS = ["/", "/charts", "/cartera", "/ranking", "/legal", "/munger/", "/modelos/", "/glosario/", "/comparar/", "/suscribirse/", "/markets/", "/ensayos/redundancia-de-efectivo/", "/perfil/", "/aviso-legal/", "/privacidad/", "/cookies/"];
+async function edgeCache(request, ttlSeconds, produce) {
+  if (request.method !== "GET" && request.method !== "HEAD") return produce();
+  const cache = typeof caches !== "undefined" ? caches.default : null;
+  const key = new Request(new URL(request.url).toString(), { method: "GET" });
+  if (cache) {
+    try {
+      const hit = await cache.match(key);
+      if (hit) {
+        const headers = new Headers(hit.headers);
+        headers.set("x-cache", "HIT");
+        return new Response(request.method === "HEAD" ? null : hit.body, { status: hit.status, headers: headers });
+      }
+    } catch (err) {}
+  }
+  const res = await produce();
+  const headers = new Headers(res.headers);
+  if (res.ok) headers.set("cache-control", "public, max-age=" + ttlSeconds);
+  headers.set("x-cache", "MISS");
+  const out = new Response(request.method === "HEAD" ? null : res.body, { status: res.status, headers: headers });
+  if (cache && res.ok) {
+    try { await cache.put(key, out.clone()); } catch (err) {}
+  }
+  return out;
+}
+
+function isHubPath(pathname) {
+  return pathname === "/" || /^\/(charts|cartera|ranking|legal|activo)\/?$/.test(pathname)
+    || pathname === "/hub.js" || pathname === "/hub.css" || pathname === "/chart.js" || pathname === "/store.js"
+    || pathname.startsWith("/shared/") || pathname.startsWith("/vendor/");
+}
 function sitemapXml() {
   return '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
     SITEMAP_PATHS.map(function (p) { return "  <url><loc>" + SITE_ORIGIN + p + "</loc></url>"; }).join("\n") + "\n</urlset>\n";
@@ -329,6 +359,10 @@ function sitemapXml() {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    if (globalThis.__hubMarket) {
+      const blocked = globalThis.__hubMarket.deny(request);
+      if (blocked) return blocked;
+    }
     if (url.pathname === "/favicon.png" || url.pathname === "/apple-touch-icon.png") {
       const bin = Uint8Array.from(atob(ICON), (c) => c.charCodeAt(0));
       return new Response(bin, { headers: { "content-type": "image/png", "cache-control": "public, max-age=86400" } });
@@ -339,9 +373,25 @@ export default {
     if (url.pathname === "/api/subscribe/status") return json({ ok: true, enabled: subEnabled(env), sitekey: TURNSTILE_SITEKEY }, 200, "no-store");
     if (url.pathname === "/api/subscribe" || url.pathname === "/api/newsletter") return handleSubscribe(request, env);
     /*__CSS_ROUTE__*/
-    if (url.pathname === "/api/quote") return handleQuote(request, url);
-    if (url.pathname === "/api/search") return handleSearch(request, url);
+    if (url.pathname === "/api/quote") return edgeCache(request, 900, function () { return handleQuote(request, url); });
+    if (url.pathname === "/api/search") return edgeCache(request, 900, function () { return handleSearch(request, url); });
+    if (globalThis.__hubMarket && (url.pathname === "/api/ohlcv" || url.pathname === "/api/pulse")) {
+      return url.pathname === "/api/ohlcv" ? globalThis.__hubMarket.handleOhlcv(request) : globalThis.__hubMarket.handlePulse(request);
+    }
     if (url.pathname.startsWith("/api/")) return json({ ok: false, error: "not_found" }, 404);
+    if (env && env.ASSETS && isHubPath(url.pathname)) {
+      const assetUrl = new URL(request.url);
+      if (url.pathname === "/" || /^\/(charts|cartera|ranking|legal|activo)\/?$/.test(url.pathname)) assetUrl.pathname = "/index.html";
+      const asset = await env.ASSETS.fetch(new Request(assetUrl.toString(), { method: "GET" }));
+      if (asset && asset.status !== 404) {
+        if (assetUrl.pathname === "/index.html") {
+          const headers = new Headers(asset.headers);
+          headers.set("cache-control", "public, max-age=600");
+          return new Response(request.method === "HEAD" ? null : asset.body, { status: asset.status, headers: headers });
+        }
+        return asset;
+      }
+    }
     if (request.method !== "GET" && request.method !== "HEAD") return new Response("Not found", { status: 404 });
     let path = url.pathname;
     if (path === "/index.html") path = "/";

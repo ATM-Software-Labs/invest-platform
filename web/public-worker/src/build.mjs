@@ -394,13 +394,24 @@ const htmlFn = `async function html(page, path) {
   let text = page.replace(/<!--B(\\d+)-->/g, function (m, i) { return BLOCKS[+i]; });
   if (path) text = text.split('<a href="' + path + '" data-i18n="nav').join('<a href="' + path + '" aria-current="page" data-i18n="nav');
   text = withSeo(text, path || "/");
-  return new Response(text, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-cache, max-age=0, must-revalidate", "x-content-type-options": "nosniff", "referrer-policy": "strict-origin-when-cross-origin", "strict-transport-security": "max-age=63072000; includeSubDomains" } });
+  return new Response(text, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=600", "x-content-type-options": "nosniff", "referrer-policy": "strict-origin-when-cross-origin", "strict-transport-security": "max-age=63072000; includeSubDomains" } });
 }`;
 const hs = api.indexOf("async function html(");
 const he = api.indexOf("\n}\n", hs) + 3;
 if (hs < 0 || he < 3) throw new Error("html() not found");
 api = api.slice(0, hs) + htmlFn + "\n" + api.slice(he);
-let out = "const PAGES = {\n" + Object.entries(dedup).map(([p, h]) => `${JSON.stringify(p)}:${asciiJson(h)}`).join(",\n") + "\n};\n";
+const repoRoot = path.resolve(ROOT, "..", "..");
+const marketBundle = esbuild.buildSync({
+  entryPoints: [path.join(repoRoot, "scripts/hub-market-entry.js")],
+  bundle: true,
+  format: "iife",
+  platform: "browser",
+  target: "es2022",
+  legalComments: "none",
+  write: false,
+  logLevel: "silent",
+}).outputFiles[0].text.replace(/[\u007f-\uffff]/g, (c) => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0"));
+let out = marketBundle + "\nconst PAGES = {\n" + Object.entries(dedup).map(([p, h]) => `${JSON.stringify(p)}:${asciiJson(h)}`).join(",\n") + "\n};\n";
 out += "const BLOCKS = [\n" + BLOCKS.map(asciiJson).join(",\n") + "\n];\n";
 out += `const ICON = "${ICON}";\nconst FONTS = ${JSON.stringify(FONTS)};\n` + api + "\n" + sub;
 for (let i = 0; i < out.length; i++) if (out.charCodeAt(i) > 127) throw new Error("non-ascii at " + i + " ctx=" + JSON.stringify(out.slice(i - 40, i + 10)));

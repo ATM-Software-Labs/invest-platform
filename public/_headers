@@ -1,0 +1,8 @@
+/vendor/*
+  Cache-Control: public, max-age=31536000, immutable
+/hub.css
+  Cache-Control: public, max-age=3600
+/hub.js
+  Cache-Control: public, max-age=3600
+/chart.js
+  Cache-Control: public, max-age=3600

@@ -42,8 +42,9 @@ globalThis.fetch = async (input) => {
   if (url.pathname === "/v1/finance/search") return new Response(JSON.stringify({ quotes: SEARCH[url.searchParams.get("q")] || [] }));
   throw new Error("unexpected fetch " + url);
 };
+const BROWSER = { headers: { "user-agent": "Mozilla/5.0" } };
 async function quote(q) {
-  const r = await worker.fetch(new Request("https://invest.example/api/quote?q=" + encodeURIComponent(q)), {});
+  const r = await worker.fetch(new Request("https://invest.example/api/quote?q=" + encodeURIComponent(q), BROWSER), {});
   return { status: r.status, cache: r.headers.get("cache-control"), body: await r.json() };
 }
 const cases = [
@@ -81,15 +82,15 @@ mode = "down";
 { const { status, body, cache } = await quote("Santander SA"); assert.equal(status, 502); assert.equal(body.error, "upstream_unavailable"); assert.equal(cache, "no-store"); }
 mode = "ok";
 {
-  const r = await worker.fetch(new Request("https://invest.example/api/search?q=Inditex"), {});
+  const r = await worker.fetch(new Request("https://invest.example/api/search?q=Inditex", BROWSER), {});
   const d = await r.json();
   assert.equal(r.status, 200);
   assert.equal(d.results[0].symbol, "ITX.MC");
 }
 {
-  const d = await (await worker.fetch(new Request("https://invest.example/api/search?q=bitcoin"), {})).json();
+  const d = await (await worker.fetch(new Request("https://invest.example/api/search?q=bitcoin", BROWSER), {})).json();
   assert.equal(d.results[0].symbol, "BTC-EUR", "alias suggestion is the EUR pair");
-  const c = await (await worker.fetch(new Request("https://invest.example/api/search?q=chainlink"), {})).json();
+  const c = await (await worker.fetch(new Request("https://invest.example/api/search?q=chainlink", BROWSER), {})).json();
   assert.equal(c.results[0].symbol, "LINK-EUR", "searched coins are offered in EUR");
   assert.equal(c.results[0].name, "Chainlink EUR", "suggestion label matches the EUR pair");
 }

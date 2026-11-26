@@ -9,7 +9,9 @@
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc -p tsconfig.json && npm --prefix web/public-worker ci && npm --prefix web/public-worker run build",
+    "build": "tsc -p tsconfig.json && node scripts/build-hub.mjs && npm --prefix web/public-worker ci && npm --prefix web/public-worker run build",
+    "build:hub": "node scripts/build-hub.mjs",
+    "dev:hub": "node scripts/hub-dev.mjs",
     "start": "node dist/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
