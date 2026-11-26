@@ -36,5 +36,5 @@ export function logoSlug(symbol) {
 
 export function logoUrl(symbol) {
   const slug = logoSlug(symbol);
-  return slug ? "https://charts.trujillomingorance.com/logo/" + slug + ".png" : "";
+  return slug ? "/logo/" + slug + ".png" : "";
 }

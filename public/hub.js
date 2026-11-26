@@ -1,11 +1,11 @@
-import { actionReasons, fundamentalRatio, FUNDAMENTAL_FORMULA, closeness } from "/shared/indicators.js?v=f9aeb8ce68";
-import { classifyAsset, simulatorAllowed, CLASS_LABEL, SPOT_PROXY } from "/shared/assets.js?v=f9aeb8ce68";
-import { AFFILIATE_DISCLOSURE, RISK_WARNING } from "/shared/etoro.js?v=f9aeb8ce68";
-import { logoUrl } from "/shared/logos.js?v=f9aeb8ce68";
-import { madridToday, markReviewed } from "/shared/streak.js?v=f9aeb8ce68";
-import { portfolioWeights, applyBuy, applySell, SIM_START_EUR } from "/shared/portfolio.js?v=f9aeb8ce68";
-import { load, save, exportJson, sanitize } from "/store.js?v=f9aeb8ce68";
-import { mountChart } from "/chart.js?v=f9aeb8ce68";
+import { actionReasons, fundamentalRatio, FUNDAMENTAL_FORMULA, closeness } from "/shared/indicators.js?v=befe856f5c";
+import { classifyAsset, simulatorAllowed, CLASS_LABEL, SPOT_PROXY } from "/shared/assets.js?v=befe856f5c";
+import { AFFILIATE_DISCLOSURE, RISK_WARNING } from "/shared/etoro.js?v=befe856f5c";
+import { logoUrl } from "/shared/logos.js?v=befe856f5c";
+import { madridToday, markReviewed } from "/shared/streak.js?v=befe856f5c";
+import { portfolioWeights, applyBuy, applySell, SIM_START_EUR } from "/shared/portfolio.js?v=befe856f5c";
+import { load, save, exportJson, sanitize } from "/store.js?v=befe856f5c";
+import { mountChart } from "/chart.js?v=befe856f5c";
 
 const RANK = ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "JPM", "SAN.MC", "ITX.MC", "SPY", "VWCE.DE", "^GSPC", "^IBEX", "GLD", "SLV"];
 const SUGGEST = ["AAPL", "MSFT", "SAN.MC", "SPY", "GLD", "^IBEX"];

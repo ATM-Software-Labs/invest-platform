@@ -372,6 +372,13 @@ export default {
     if (url.pathname === "/api/subscribe/status") return json({ ok: true, enabled: subEnabled(env), sitekey: TURNSTILE_SITEKEY }, 200, "no-store");
     if (url.pathname === "/api/subscribe" || url.pathname === "/api/newsletter") return handleSubscribe(request, env);
     /*__CSS_ROUTE__*/
+    if ((request.method === "GET" || request.method === "HEAD") && url.pathname.startsWith("/logo/") && url.pathname.endsWith(".png")) {
+      const slug = decodeURIComponent(url.pathname.slice(6, -4));
+      if (!/^[a-z0-9-]{1,60}$/.test(slug)) return new Response("not found", { status: 404 });
+      const upstream = await fetch("https://charts.trujillomingorance.com/logo/" + slug + ".png", { headers: { "User-Agent": "Mozilla/5.0", "Accept": "image/png" } });
+      if (!upstream.ok) return new Response("not found", { status: 404, headers: { "cache-control": "public, max-age=300" } });
+      return new Response(request.method === "HEAD" ? null : upstream.body, { headers: { "content-type": "image/png", "cache-control": "public, max-age=86400", "x-content-type-options": "nosniff" } });
+    }
     if (url.pathname === "/api/quote") return edgeCache(request, 900, function () { return handleQuote(request, url); });
     if (url.pathname === "/api/search") return edgeCache(request, 900, function () { return handleSearch(request, url); });
     if (globalThis.__hubMarket && (url.pathname === "/api/ohlcv" || url.pathname === "/api/pulse")) {
