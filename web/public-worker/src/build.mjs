@@ -400,7 +400,44 @@ const hs = api.indexOf("async function html(");
 const he = api.indexOf("\n}\n", hs) + 3;
 if (hs < 0 || he < 3) throw new Error("html() not found");
 api = api.slice(0, hs) + htmlFn + "\n" + api.slice(he);
-let out = "const PAGES = {\n" + Object.entries(dedup).map(([p, h]) => `${JSON.stringify(p)}:${asciiJson(h)}`).join(",\n") + "\n};\n";
+const repoRoot = path.resolve(ROOT, "..", "..");
+const jsString = (s) => JSON.stringify(s).replace(/[\u007f-\uffff]/g, (c) => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0"));
+const hubFiles = {
+  "/hub.js": "public/hub.js",
+  "/hub.css": "public/hub.css",
+  "/chart.js": "public/chart.js",
+  "/store.js": "public/store.js",
+  "/index.html": "public/index.html",
+  "/shared/indicators.js": "shared/indicators.js",
+  "/shared/assets.js": "shared/assets.js",
+  "/shared/etoro.js": "shared/etoro.js",
+  "/shared/streak.js": "shared/streak.js",
+  "/shared/portfolio.js": "shared/portfolio.js",
+  "/vendor/lightweight-charts.standalone.production.js": "public/vendor/lightweight-charts.standalone.production.js",
+};
+const hubTypes = {
+  ".js": "text/javascript; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".html": "text/html; charset=utf-8",
+};
+let hubMap = "";
+for (const [route, rel] of Object.entries(hubFiles)) {
+  const body = fs.readFileSync(path.join(repoRoot, rel));
+  const ext = path.extname(rel);
+  hubMap += `${JSON.stringify(route)}:[${JSON.stringify(hubTypes[ext] || "application/octet-stream")},${jsString(body.toString("utf8"))}],\n`;
+}
+const marketBundle = esbuild.buildSync({
+  entryPoints: [path.join(repoRoot, "scripts/hub-market-entry.js")],
+  bundle: true,
+  format: "iife",
+  platform: "browser",
+  target: "es2022",
+  legalComments: "none",
+  write: false,
+  logLevel: "silent",
+}).outputFiles[0].text.replace(/[\u007f-\uffff]/g, (c) => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0"));
+const hubPrelude = marketBundle + "\nconst HUB_STATIC = {\n" + hubMap + "};\nfunction serveHubStatic(pathname) {\n  const row = HUB_STATIC[pathname];\n  if (!row) return null;\n  return new Response(row[1], { headers: { \"content-type\": row[0], \"cache-control\": \"public, max-age=3600\" } });\n}\nfunction serveHubPage() {\n  return new Response(HUB_STATIC[\"/index.html\"][1], { headers: { \"content-type\": \"text/html; charset=utf-8\", \"cache-control\": \"no-cache\" } });\n}\n";
+let out = hubPrelude + "const PAGES = {\n" + Object.entries(dedup).map(([p, h]) => `${JSON.stringify(p)}:${asciiJson(h)}`).join(",\n") + "\n};\n";
 out += "const BLOCKS = [\n" + BLOCKS.map(asciiJson).join(",\n") + "\n];\n";
 out += `const ICON = "${ICON}";\nconst FONTS = ${JSON.stringify(FONTS)};\n` + api + "\n" + sub;
 for (let i = 0; i < out.length; i++) if (out.charCodeAt(i) > 127) throw new Error("non-ascii at " + i + " ctx=" + JSON.stringify(out.slice(i - 40, i + 10)));

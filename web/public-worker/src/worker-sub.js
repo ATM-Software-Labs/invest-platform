@@ -320,7 +320,7 @@ function withSeo(text, path) {
   return text.replace(anchor[0], anchor[0] + "\n" + tags);
 }
 
-const SITEMAP_PATHS = ["/", "/munger/", "/modelos/", "/glosario/", "/comparar/", "/suscribirse/", "/markets/", "/ensayos/redundancia-de-efectivo/", "/perfil/", "/aviso-legal/", "/privacidad/", "/cookies/"];
+const SITEMAP_PATHS = ["/", "/charts", "/cartera", "/ranking", "/legal", "/munger/", "/modelos/", "/glosario/", "/comparar/", "/suscribirse/", "/markets/", "/ensayos/redundancia-de-efectivo/", "/perfil/", "/aviso-legal/", "/privacidad/", "/cookies/"];
 function sitemapXml() {
   return '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
     SITEMAP_PATHS.map(function (p) { return "  <url><loc>" + SITE_ORIGIN + p + "</loc></url>"; }).join("\n") + "\n</urlset>\n";
@@ -329,6 +329,10 @@ function sitemapXml() {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    if (globalThis.__hubMarket) {
+      const blocked = globalThis.__hubMarket.deny(request);
+      if (blocked) return blocked;
+    }
     if (url.pathname === "/favicon.png" || url.pathname === "/apple-touch-icon.png") {
       const bin = Uint8Array.from(atob(ICON), (c) => c.charCodeAt(0));
       return new Response(bin, { headers: { "content-type": "image/png", "cache-control": "public, max-age=86400" } });
@@ -341,7 +345,13 @@ export default {
     /*__CSS_ROUTE__*/
     if (url.pathname === "/api/quote") return handleQuote(request, url);
     if (url.pathname === "/api/search") return handleSearch(request, url);
+    if (globalThis.__hubMarket && (url.pathname === "/api/ohlcv" || url.pathname === "/api/pulse")) {
+      return url.pathname === "/api/ohlcv" ? globalThis.__hubMarket.handleOhlcv(request) : globalThis.__hubMarket.handlePulse(request);
+    }
     if (url.pathname.startsWith("/api/")) return json({ ok: false, error: "not_found" }, 404);
+    const hubStatic = serveHubStatic(url.pathname);
+    if (hubStatic) return hubStatic;
+    if (url.pathname === "/" || /^\/(charts|cartera|ranking|legal|activo)\/?$/.test(url.pathname)) return serveHubPage();
     if (request.method !== "GET" && request.method !== "HEAD") return new Response("Not found", { status: 404 });
     let path = url.pathname;
     if (path === "/index.html") path = "/";

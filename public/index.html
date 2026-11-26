@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>INVEST · Hub financiero</title>
+  <meta name="description" content="Pulse, gráficos y cartera con datos públicos. Información, no asesoramiento."/>
+  <link rel="icon" href="/favicon.png" type="image/png"/>
+  <link rel="stylesheet" href="/hub.css"/>
+</head>
+<body>
+  <p class="aff" id="aff-banner"></p>
+  <header class="top">
+    <a class="brand" href="/">INVEST <span>Hub</span></a>
+    <nav id="nav" aria-label="Secciones">
+      <a href="/">Pulse (2 min)</a>
+      <a href="/charts">Terminal Charts</a>
+      <a href="/cartera">Cartera &amp; Tesis</a>
+      <a href="/ranking">Ranking</a>
+    </nav>
+    <form id="search-form" role="search">
+      <label class="dim" for="q">Buscar</label>
+      <input id="q" type="search" placeholder="Ticker, nombre o ISIN" autocomplete="off" enterkeyhint="search"/>
+      <div id="hits" hidden></div>
+    </form>
+    <div class="tags" id="tags" role="group" aria-label="Tipo de activo"></div>
+  </header>
+  <main id="main"></main>
+  <footer class="foot">
+    <div class="warn" id="risk-foot"></div>
+    <div class="slot" id="etoro-partners-widget" data-slot="etoro-risk-widget">
+      <!-- Vacío a propósito: pegar aquí el widget/banner oficial de eToro Partners. -->
+      <p class="slot-label">Espacio para el banner oficial de eToro Partners</p>
+    </div>
+    <p class="fine">
+      <a href="/legal">Aviso legal y afiliación</a>
+      · <a href="/comparar/">Comparador</a>
+      · <a href="/munger/">Checklist Munger</a>
+      · <a href="/suscribirse/">Notas</a>
+      · <a href="/aviso-legal/">Aviso clásico</a>
+    </p>
+    <p class="fine">Información general y educativa. El simulador usa dinero virtual. No es asesoramiento financiero.</p>
+  </footer>
+  <script type="module" src="/hub.js"></script>
+</body>
+</html>

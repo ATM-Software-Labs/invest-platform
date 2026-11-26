@@ -77,6 +77,52 @@ Datos de la web pública: cotizaciones y búsqueda de símbolos de **Yahoo Finan
 > [`wrangler.example.toml`](wrangler.example.toml): cópiala a `wrangler.terminal.toml` con
 > **otro** nombre de Worker y ejecuta `npm run deploy:terminal`.
 
+## Financial Hub
+
+La portada del Worker (`/`) es el hub oscuro: **Pulse (2 min)**, **Terminal Charts** (`/charts?symbol=AAPL`), **Cartera & Tesis** y **Ranking**. La investigación anterior (búsqueda por ticker, nombre o ISIN, cotización, 10-K, checklist Munger, comparador y suscripción) sigue en el hub y en sus rutas (`/comparar/`, `/munger/`, `/suscribirse/`, `/aviso-legal/`).
+
+| Pulse | Velas y capas | Ranking |
+|:-:|:-:|:-:|
+| <img src="docs/screenshots/hub/pulse-senales.png" width="280" alt="Pulse con señales"/> | <img src="docs/screenshots/hub/chart-velas.png" width="280" alt="Gráfico de velas con indicadores"/> | <img src="docs/screenshots/hub/ranking.png" width="280" alt="Ranking de métricas"/> |
+
+Los gráficos salen del componente de ficha de [markets-digest](https://github.com/atrumin16/markets-digest) (`src/company.js`: Lightweight Charts, rangos `1D 5D 1M 6M YTD 1Y 5Y Max`, línea de máximo y caída desde máximos). Ese repositorio no se modifica: el digest de correo sigue siendo suyo. Aquí el cálculo (EMA, POC, pivotes, tendencia) corre en el navegador.
+
+Datos de mercado: **Yahoo Finance** (el mismo gráfico público que ya usa `/api/quote`), sin clave. El 10-K sigue siendo **SEC EDGAR**. Las materias primas del simulador son ETC/ETF físicos (GLD, SLV…): el feed gratuito solo da oro y plata como futuros, y los futuros, CFDs y productos apalancados se rechazan.
+
+### Despliegue (no lo lanza este cambio)
+
+El CI actual sigue siendo el Worker:
+
+```bash
+npm run build          # tsc + hub estático + web/public-worker/dist/worker.js
+npx wrangler deploy    # Worker invest, misma ruta. No toca DNS ni reglas de Cloudflare.
+```
+
+Cloudflare Pages, si más adelante se mueve el sitio (tampoco se despliega desde aquí):
+
+| Ajuste | Valor |
+| --- | --- |
+| Comando de build | `node scripts/build-hub.mjs` |
+| Directorio de salida | `public` |
+| Functions | `functions/` (`/api/ohlcv`, `/api/pulse`, `/api/quote`, `/api/search`) |
+
+`/api/ohlcv` y `/api/pulse` cachean con `caches.default` (15 min intradía, 60 min diario, 20 min el pulso) y cortan antes de trabajar un user-agent vacío, un escáner conocido o rutas `wp-*`, `.env` y `.php`. `robots.txt` y el favicon se sirven como estáticos.
+
+### Redirección de charts.trujillomingorance.com
+
+Hay que aplicarla a mano en el panel (Reglas → Redirect Rules). **No** borra el Worker `markets-digest`: un redirect de todo el host rompería las imágenes del correo (`/c/`), `/api/` y el cron. Regla recomendada, solo navegación HTML, conservando path y query:
+
+- Si `http.host eq "charts.trujillomingorance.com"` y la ruta no empieza por `/c/`, `/api/`, `/logo`, `/logos/`, `/health`, `/fonts/` ni `/flags/`
+- Entonces redirect dinámico **301** a `concat("https://invest.trujillomingorance.com/charts", http.request.uri.path)` con **Preserve query string**
+
+`public/_redirects` reescribe en este proyecto `/charts`, `/cartera`, `/ranking`, `/legal` y `/activo` al `index.html` del hub (no afecta al otro dominio).
+
+### eToro Partners
+
+El enlace sale de `ETORO_AFFILIATE_URL` en [`shared/etoro.js`](shared/etoro.js). Hoy es un marcador (`https://www.etoro.com/markets/{symbol}`). Sustituye el valor por la URL de seguimiento; `{symbol}` entra ya codificado. El hueco `#etoro-partners-widget` del pie está vacío para pegar el banner oficial de riesgo.
+
+**El titular tiene que revisar `/legal` contra las condiciones vigentes de eToro Partners** antes de activar el enlace de afiliado. El texto cubre herramienta independiente, simulador con dinero virtual, ausencia de CFDs o apalancamiento y uso reservado a mayores de 18 años.
+
 ## Puesta en marcha
 
 Requisitos: Node.js ≥ 20 (22 recomendado) y npm.
