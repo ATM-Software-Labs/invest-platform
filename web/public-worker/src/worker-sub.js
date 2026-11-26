@@ -337,7 +337,7 @@ async function edgeCache(request, ttlSeconds, produce) {
   }
   const res = await produce();
   const headers = new Headers(res.headers);
-  if (res.ok) headers.set("cache-control", "public, max-age=" + ttlSeconds);
+  if (res.ok) headers.set("cache-control", "public, max-age=" + ttlSeconds + ", s-maxage=" + ttlSeconds);
   headers.set("x-cache", "MISS");
   const out = new Response(request.method === "HEAD" ? null : res.body, { status: res.status, headers: headers });
   if (cache && res.ok) {
@@ -386,7 +386,8 @@ export default {
       if (asset && asset.status !== 404) {
         if (assetUrl.pathname === "/index.html") {
           const headers = new Headers(asset.headers);
-          headers.set("cache-control", "public, max-age=600");
+          headers.set("cache-control", "public, max-age=0, must-revalidate");
+          headers.set("cdn-cache-control", "public, max-age=60");
           return new Response(request.method === "HEAD" ? null : asset.body, { status: asset.status, headers: headers });
         }
         return asset;

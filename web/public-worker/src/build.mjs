@@ -394,7 +394,7 @@ const htmlFn = `async function html(page, path) {
   let text = page.replace(/<!--B(\\d+)-->/g, function (m, i) { return BLOCKS[+i]; });
   if (path) text = text.split('<a href="' + path + '" data-i18n="nav').join('<a href="' + path + '" aria-current="page" data-i18n="nav');
   text = withSeo(text, path || "/");
-  return new Response(text, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=600", "x-content-type-options": "nosniff", "referrer-policy": "strict-origin-when-cross-origin", "strict-transport-security": "max-age=63072000; includeSubDomains" } });
+  return new Response(text, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=0, must-revalidate", "cdn-cache-control": "public, max-age=60", "x-content-type-options": "nosniff", "referrer-policy": "strict-origin-when-cross-origin", "strict-transport-security": "max-age=63072000; includeSubDomains" } });
 }`;
 const hs = api.indexOf("async function html(");
 const he = api.indexOf("\n}\n", hs) + 3;
