@@ -16,20 +16,24 @@ let chartApi = null;
 let sortKey = "rs1m";
 let sortDir = -1;
 
-const main = document.getElementById("main");
-document.getElementById("aff-banner").textContent = AFFILIATE_DISCLOSURE;
-document.getElementById("risk-foot").textContent = RISK_WARNING;
+const main = document.getElementById("hub-main");
+const aff = document.getElementById("aff-banner");
+if (aff) aff.textContent = AFFILIATE_DISCLOSURE;
+const riskFoot = document.getElementById("risk-foot");
+if (riskFoot) riskFoot.textContent = RISK_WARNING;
 
 const TAGS = [["all", "Todos"], ["stock", "Acción"], ["etf", "ETF"], ["fund", "Fondo / Índice"], ["commodity", "Materias Primas"]];
 const tags = document.getElementById("tags");
-tags.innerHTML = TAGS.map(([id, lab]) => `<button type="button" data-tag="${id}" aria-pressed="${id === filter}">${lab}</button>`).join("");
-tags.addEventListener("click", (e) => {
-  const b = e.target.closest("[data-tag]");
-  if (!b) return;
-  filter = b.dataset.tag;
-  tags.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.tag === filter)));
-  render();
-});
+if (tags) {
+  tags.innerHTML = TAGS.map(([id, lab]) => `<button type="button" data-tag="${id}" aria-pressed="${id === filter}">${lab}</button>`).join("");
+  tags.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-tag]");
+    if (!b) return;
+    filter = b.dataset.tag;
+    tags.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.tag === filter)));
+    render();
+  });
+}
 
 function persist() { save(state); }
 function go(href) { history.pushState(null, "", href); render(); }
@@ -46,7 +50,7 @@ function cls(n) { return n > 0 ? "up" : n < 0 ? "down" : ""; }
 function esc(s) { return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 
 function isHub(path) {
-  return path === "/" || /^\/(charts|cartera|ranking|legal|activo)\/?$/.test(path);
+  return /^\/(pulse|charts|cartera|ranking|legal|activo)\/?$/.test(path);
 }
 document.body.addEventListener("click", (e) => {
   const a = e.target.closest("a[href]");
@@ -108,9 +112,9 @@ function zoneClass(price, zone) {
 
 function renderNav() {
   const path = location.pathname.replace(/\/$/, "") || "/";
-  document.querySelectorAll("#nav a").forEach((a) => {
+  document.querySelectorAll(".atm-subnav a").forEach((a) => {
     const href = (a.getAttribute("href") || "/").replace(/\/$/, "") || "/";
-    const on = href === "/" ? path === "/" : path === href || path.startsWith(href + "/");
+    const on = href === "/" ? path === "/" : path === href;
     if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
   });
 }
@@ -120,12 +124,13 @@ async function render() {
   renderNav();
   const path = location.pathname.replace(/\/$/, "") || "/";
   const q = new URLSearchParams(location.search);
+  if (!main) return;
   if (path === "/charts") return renderChart(q);
   if (path === "/cartera") return renderCartera();
   if (path === "/ranking") return renderRanking();
   if (path === "/legal") return renderLegal();
   if (path === "/activo") return renderAsset(q.get("symbol") || "");
-  return renderPulse();
+  if (path === "/pulse") return renderPulse();
 }
 
 function renderPulse() {
@@ -215,7 +220,7 @@ async function paintRadar() {
       <span class="${cls(row.changePct)}">${nf(row.price)} ${esc(row.currency || "")} · ${pct(row.changePct)}</span>
       <span class="dim">${reasons.map((r) => esc(r.text)).join(" · ")}</span>
     </button>`).join("")}</div>`;
-    host.querySelectorAll("[data-open]").forEach((b) => b.addEventListener("click", () => go("/charts?symbol=" + encodeURIComponent(b.dataset.open) + "&overlays=1")));
+    host.querySelectorAll("[data-open]").forEach((b) => b.addEventListener("click", () => go("/charts/?symbol=" + encodeURIComponent(b.dataset.open) + "&overlays=1")));
   }
   paintZones();
   const alerts = firedAlerts();
@@ -258,7 +263,7 @@ function paintZones() {
   host.querySelectorAll("tr[data-i]").forEach((tr) => tr.addEventListener("click", (e) => {
     if (e.target.closest("input, button")) return;
     const sym = state.zones[+tr.dataset.i] && state.zones[+tr.dataset.i].symbol;
-    if (sym) go("/charts?symbol=" + encodeURIComponent(sym) + "&overlays=1");
+    if (sym) go("/charts/?symbol=" + encodeURIComponent(sym) + "&overlays=1");
   }));
 }
 
@@ -285,7 +290,7 @@ async function onImport(e) {
 async function renderChart(q) {
   const symbol = (q.get("symbol") || "AAPL").toUpperCase();
   const range = (q.get("range") || "1Y").toUpperCase();
-  main.innerHTML = `<h1>Terminal Charts</h1><p class="lead">El mismo gráfico de área, rangos y línea de máximos, con velas, volumen y capas que se calculan en el navegador.</p><div id="terminal"></div>`;
+  main.innerHTML = `<h1>Gráficos</h1><p class="lead">El mismo gráfico de área, rangos y línea de máximos, con velas, volumen y capas que se calculan en el navegador.</p><div id="terminal"></div>`;
   chartApi = await mountChart(document.getElementById("terminal"), {
     symbol,
     range,
@@ -293,7 +298,7 @@ async function renderChart(q) {
     ath: q.get("ath") || "1",
     onSymbol: (sym, rng) => {
       const u = new URL(location.href);
-      u.pathname = "/charts";
+      u.pathname = "/charts/";
       u.searchParams.set("symbol", sym);
       u.searchParams.set("range", rng);
       history.replaceState(null, "", u.pathname + u.search);
@@ -389,7 +394,7 @@ async function renderCartera() {
     try {
       const data = await api("/api/quote?q=" + encodeURIComponent(q));
       const quote = data.quote || {};
-      out.innerHTML = `<p><strong>${esc(quote.name || "")}</strong> ${esc(quote.symbol || "")} · ${nf(quote.regularMarketPrice)} ${esc(quote.currency || "")} <span class="${cls(quote.regularMarketChangePercent)}">${pct(quote.regularMarketChangePercent)}</span></p>${data.filingsNote ? `<p class="dim">${esc(data.filingsNote)}</p>` : ""}${munger(data.filings)}<p><a href="/charts?symbol=${encodeURIComponent(quote.symbol || "")}">Abrir gráfico</a> · <a href="/activo?symbol=${encodeURIComponent(quote.symbol || "")}">Ficha</a></p>`;
+      out.innerHTML = `<p><strong>${esc(quote.name || "")}</strong> ${esc(quote.symbol || "")} · ${nf(quote.regularMarketPrice)} ${esc(quote.currency || "")} <span class="${cls(quote.regularMarketChangePercent)}">${pct(quote.regularMarketChangePercent)}</span></p>${data.filingsNote ? `<p class="dim">${esc(data.filingsNote)}</p>` : ""}${munger(data.filings)}<p><a href="/charts/?symbol=${encodeURIComponent(quote.symbol || "")}">Abrir gráfico</a> · <a href="/activo/?symbol=${encodeURIComponent(quote.symbol || "")}">Ficha</a></p>`;
     } catch { out.textContent = "No hay resultado para esa consulta."; }
   });
   document.getElementById("cmp").addEventListener("submit", async (e) => {
@@ -443,7 +448,7 @@ async function paintSim() {
         const mv = px * p.shares;
         const weight = w.equity > 0 ? (mv / w.equity) * 100 : 0;
         const show = filter === "all" || p.type === filter;
-        return show ? `<tr><td><a href="/charts?symbol=${encodeURIComponent(p.symbol)}&overlays=1">${esc(p.symbol)}</a></td><td>${esc(CLASS_LABEL[p.type] || p.type)}</td><td>${nf(p.shares, 4)}</td><td>${nf(px)}</td><td>${nf(weight, 1)} %</td><td><button class="btn" data-sell="${esc(p.symbol)}" type="button">Vender</button></td></tr>` : "";
+        return show ? `<tr><td><a href="/charts/?symbol=${encodeURIComponent(p.symbol)}&overlays=1">${esc(p.symbol)}</a></td><td>${esc(CLASS_LABEL[p.type] || p.type)}</td><td>${nf(p.shares, 4)}</td><td>${nf(px)}</td><td>${nf(weight, 1)} %</td><td><button class="btn" data-sell="${esc(p.symbol)}" type="button">Vender</button></td></tr>` : "";
       }).join("") || `<tr><td colspan="6" class="muted">Sin posiciones${filter !== "all" ? " de este tipo" : ""}.</td></tr>`}
     </tbody></table></div>`;
   host.querySelectorAll("[data-sell]").forEach((b) => b.addEventListener("click", () => {
@@ -544,7 +549,7 @@ function paintRank(rows) {
         <td>${near == null ? "n/d" : nf(near, 2) + " %"}</td>
         <td class="${cls(row.drawdown)}">${pct(row.drawdown)}</td>
         <td>${ratio ? nf(ratio.value * 100, 1) + " % " + (ratio.basis === "fcf" ? "FCF" : "neto") : (/^[A-Z]{1,5}$/.test(row.symbol) ? "…" : "n/d")}</td>
-        <td>${etoroBlock(row.symbol)}<div class="dim"><a href="/activo?symbol=${encodeURIComponent(row.symbol)}">Ficha</a></div></td>
+        <td>${etoroBlock(row.symbol)}<div class="dim"><a href="/activo/?symbol=${encodeURIComponent(row.symbol)}">Ficha</a></div></td>
       </tr>`;
     }).join("") || `<tr><td colspan="7">Sin filas para este filtro.</td></tr>`}</tbody></table></div>
     <p class="dim">Fuerza relativa = variación del cierre a 21 sesiones y desde el primer cierre del año. Cercanía = la menor distancia absoluta al POC de 90 días o al soporte (último pivote por debajo). Caída = cierre frente al máximo del histórico diario usado (5 años). ${esc(FUNDAMENTAL_FORMULA)}</p>`;
@@ -554,7 +559,7 @@ function paintRank(rows) {
   }));
   host.querySelectorAll("tr[data-sym]").forEach((tr) => tr.addEventListener("click", (e) => {
     if (e.target.closest("a, button, .etoro")) return;
-    go("/charts?symbol=" + encodeURIComponent(tr.dataset.sym) + "&overlays=1");
+    go("/charts/?symbol=" + encodeURIComponent(tr.dataset.sym) + "&overlays=1");
   }));
 }
 
@@ -587,7 +592,7 @@ async function renderAsset(symbol) {
     <p>${esc(sym)} · <span class="tag">${esc(asset.label || "")}</span></p>
     <p class="kpis"><b>${nf(price)}</b> <span class="${cls(change)}">${pct(change)}</span></p>
     ${asset.type === "blocked" ? `<p class="dim">${esc(asset.reason || "")}${asset.proxy ? " Contado: " + esc(asset.proxy) : ""}</p>` : ""}
-    <p><a href="/charts?symbol=${encodeURIComponent(sym)}&overlays=1">Abrir en Terminal Charts</a></p>
+    <p><a href="/charts/?symbol=${encodeURIComponent(sym)}&overlays=1">Abrir gráfico</a></p>
     ${etoroBlock(sym)}
     <section class="card"><h2>10-K</h2>${note ? `<p class="dim">${esc(note)}</p>` : ""}${munger(filings)}</section>`;
 }
@@ -596,7 +601,7 @@ function renderLegal() {
   main.innerHTML = `
     <h1>Aviso legal y política de afiliación</h1>
     <div class="card">
-      <p>INVEST Hub es una herramienta independiente de análisis y de seguimiento personal. No es una empresa de servicios de inversión, no está registrada en la CNMV y no ejecuta órdenes.</p>
+      <p>INVEST es una herramienta independiente de análisis y de seguimiento personal. No es una empresa de servicios de inversión, no está registrada en la CNMV y no ejecuta órdenes.</p>
       <p>El simulador de 100.000 € usa dinero virtual. Las compras y las ventas no son operaciones reales y no se transmiten a ningún bróker.</p>
       <p>No se promocionan CFDs, futuros ni productos apalancados. El buscador y el simulador rechazan esos instrumentos. Las materias primas que se pueden anotar son referencias al contado (ETC/ETF físicos, sin leva).</p>
       <p>El uso de esta herramienta está reservado a personas adultas, de 18 años o más.</p>
@@ -610,14 +615,6 @@ function renderLegal() {
 const form = document.getElementById("search-form");
 const hits = document.getElementById("hits");
 let searchTimer = 0;
-form.addEventListener("submit", (e) => e.preventDefault());
-document.getElementById("q").addEventListener("input", (e) => {
-  clearTimeout(searchTimer);
-  const q = e.target.value.trim();
-  if (q.length < 2) { hits.hidden = true; hits.innerHTML = ""; return; }
-  searchTimer = setTimeout(() => runSearch(q), 250);
-});
-document.addEventListener("click", (e) => { if (!form.contains(e.target)) hits.hidden = true; });
 
 async function runSearch(q) {
   let data;
@@ -647,14 +644,24 @@ async function runSearch(q) {
       const input = document.getElementById("buy-sym");
       if (input) { input.value = sym; return; }
     }
-    go("/charts?symbol=" + encodeURIComponent(sym));
+    go("/charts/?symbol=" + encodeURIComponent(sym));
   }));
 }
 
-const presetQ = new URLSearchParams(location.search).get("q");
-if (presetQ && presetQ.trim().length >= 2 && (location.pathname.replace(/\/$/, "") || "/") === "/") {
-  document.getElementById("q").value = presetQ.trim();
-  runSearch(presetQ.trim());
+if (form && hits) {
+  form.addEventListener("submit", (e) => e.preventDefault());
+  document.getElementById("q").addEventListener("input", (e) => {
+    clearTimeout(searchTimer);
+    const q = e.target.value.trim();
+    if (q.length < 2) { hits.hidden = true; hits.innerHTML = ""; return; }
+    searchTimer = setTimeout(() => runSearch(q), 250);
+  });
+  document.addEventListener("click", (e) => { if (!form.contains(e.target)) hits.hidden = true; });
+  const presetQ = new URLSearchParams(location.search).get("q");
+  if (presetQ && presetQ.trim().length >= 2) {
+    document.getElementById("q").value = presetQ.trim();
+    runSearch(presetQ.trim());
+  }
 }
 
 render();

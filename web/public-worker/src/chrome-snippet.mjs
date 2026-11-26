@@ -1,15 +1,4 @@
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { AFFILIATE_DISCLOSURE, RISK_WARNING, ETORO_WIDGET_SLOT_ID } from "../../../shared/etoro.js";
-
-const assetV = (() => {
-  try {
-    return fs.readFileSync(path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../public/asset-version.txt"), "utf8").trim() || "1";
-  } catch {
-    return "1";
-  }
-})();
 
 const TW_CONFIG = `
 tailwind.config = {
@@ -128,6 +117,7 @@ const SHARED_CSS = `
   .atm-foot-sep{color:var(--dim);opacity:.5;user-select:none}
   .atm-foot-notice{margin-top:1rem;padding:.85rem 1rem;border-radius:.75rem;border:1px solid var(--line-solid);background:color-mix(in srgb,var(--bg) 70%,var(--elev));color:var(--muted);font-size:.8rem;line-height:1.55}
   .atm-foot-notice strong{color:var(--text);font-weight:600}
+  .etoro-slot{margin-top:.75rem;min-height:3rem;border:1px dashed var(--line-solid);border-radius:.75rem}
   [data-theme="light"] .atm-foot{background:#f8fafc}
   [data-theme="light"] .atm-foot-notice{background:#fff;border-color:#e2e8f0}
   /* ATM Software Labs: shared network strip */
@@ -183,6 +173,11 @@ const SHARED_CSS = `
 
 const NAV = [
   ["/", "navHome", "Consulta"],
+  ["/pulse/", "navPulse", "Pulse"],
+  ["/charts/", "navCharts", "Gráficos"],
+  ["/cartera/", "navCartera", "Cartera"],
+  ["/ranking/", "navRanking", "Ranking"],
+  ["/legal/", "navAfiliacion", "Legal"],
   ["/munger/", "navMunger", "Checklist Munger"],
   ["/modelos/", "navModels", "Modelos mentales"],
   ["/comparar/", "navCompare", "Comparar"],
@@ -206,67 +201,96 @@ function head(title, description, extraHead) {
 <link rel="preload" href="/fonts/inter-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin=""/>
 <style>@font-face{font-family:"Inter";font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/inter-latin-400-normal.woff2) format("woff2")}@font-face{font-family:"Inter";font-style:normal;font-weight:500;font-display:swap;src:url(/fonts/inter-latin-500-normal.woff2) format("woff2")}@font-face{font-family:"Inter";font-style:normal;font-weight:600;font-display:swap;src:url(/fonts/inter-latin-600-normal.woff2) format("woff2")}@font-face{font-family:"Inter";font-style:normal;font-weight:700;font-display:swap;src:url(/fonts/inter-latin-700-normal.woff2) format("woff2")}@font-face{font-family:"Inter";font-style:normal;font-weight:800;font-display:swap;src:url(/fonts/inter-latin-800-normal.woff2) format("woff2")}@font-face{font-family:"IBM Plex Mono";font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/ibm-plex-mono-latin-400-normal.woff2) format("woff2")}@font-face{font-family:"IBM Plex Mono";font-style:normal;font-weight:500;font-display:swap;src:url(/fonts/ibm-plex-mono-latin-500-normal.woff2) format("woff2")}</style>
 ${extraHead || ""}<script>
-(function(){try{document.documentElement.setAttribute('data-theme','dark');document.documentElement.classList.add('dark');var l=localStorage.getItem('invest.lang.v1');if(l==='en'||l==='es')document.documentElement.setAttribute('lang',l);}catch(e){}})();
+(function(){try{var t=localStorage.getItem('invest.theme.v1');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);document.documentElement.classList.toggle('dark',t!=='light');}var l=localStorage.getItem('invest.lang.v1');if(l==='en'||l==='es')document.documentElement.setAttribute('lang',l);}catch(e){}})();
 </script>
 <style>
 ${SHARED_CSS}
 ${COMPILED_CSS}
 </style>
-<link rel="stylesheet" href="/hub.css?v=${assetV}"/>
 </head>`;
 }
 
-const HUB_TABS = [
-  ["/", "Pulse (2 min)"],
-  ["/charts", "Terminal Charts"],
-  ["/cartera", "Cartera &amp; Tesis"],
-  ["/ranking", "Ranking"],
-  ["/comparar/", "Comparar"],
-  ["/munger/", "Checklist"],
-  ["/suscribirse/", "Notas"],
-];
-
-function tabOn(active, href) {
-  if (!active) return false;
-  const a = String(active).replace(/\/$/, "") || "/";
-  const h = href.replace(/\/$/, "") || "/";
-  if (h === "/") return a === "/";
-  if (h === "/suscribirse" && (a === "/suscribirse" || a === "/confirmado")) return true;
-  return a === h || a.startsWith(h + "/");
-}
-
-function topbar(_ctaHref, _ctaLabel, active) {
-  const links = HUB_TABS.map(function (tab) {
-    const href = tab[0];
-    const label = tab[1];
-    return '<a href="' + href + '"' + (tabOn(active, href) ? ' aria-current="page"' : "") + ">" + label + "</a>";
-  }).join("");
-  return `<p class="aff">${AFFILIATE_DISCLOSURE}</p>
-<header class="top">
-  <a class="brand" href="/">INVEST <span>Hub</span></a>
-  <nav id="nav" aria-label="Secciones">${links}</nav>
-  <form id="search-form" action="/" method="get" role="search">
-    <label class="dim" for="hub-q">Buscar</label>
-    <input id="hub-q" name="q" type="search" placeholder="Ticker, nombre o ISIN" autocomplete="off" enterkeyhint="search"/>
-  </form>
+function topbar(ctaHref, ctaLabel, active) {
+  return `<header class="atm-top sticky top-0 z-40 border-b">
+  <div class="mx-auto flex h-14 max-w-content items-center justify-between gap-2 px-4 sm:gap-3 sm:px-5 md:h-16">
+    <a href="/" class="group flex min-w-0 items-center gap-2.5 font-sans no-underline transition-opacity hover:opacity-90" aria-label="INVEST — inicio">
+      <span class="atm-brand-mark inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-pill text-[11px] font-bold tracking-wide text-white">IN</span>
+      <span class="flex min-w-0 flex-col">
+        <span class="text-sm font-semibold tracking-tight text-ink">INVEST</span>
+        <span class="atm-brand-sub">ATM · Markets</span>
+      </span>
+    </a>
+    <div class="atm-actions">
+      <a href="https://charts.trujillomingorance.com/" class="atm-btn hidden min-[380px]:inline-flex items-center rounded-lg px-2 py-1.5 font-sans text-xs no-underline sm:px-2.5">Markets Briefing</a>
+      <a id="nav-perfil" href="/perfil/" class="atm-btn hidden min-[380px]:inline-flex items-center rounded-lg px-2 py-1.5 font-sans text-xs no-underline sm:px-2.5" data-i18n="navProfile">Perfil</a>
+      <div class="relative" id="lang-picker">
+        <button type="button" id="lang-btn" class="atm-btn inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 font-sans text-xs sm:px-2.5" title="Idioma" aria-label="Idioma" aria-haspopup="listbox" aria-expanded="false">
+          <img id="lang-flag" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 3'%3E%3Cpath fill='%23c60b1e' d='M0 0h4v3H0z'/%3E%3Cpath fill='%23ffc400' d='M0 .75h4v1.5H0z'/%3E%3C/svg%3E" width="16" height="12" alt="" class="rounded-sm"/>
+          <span id="lang-code">ES</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div id="lang-menu" class="lang-menu" role="listbox" hidden>
+          <button type="button" class="lang-option" role="option" data-lang="es" aria-selected="true"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 3'%3E%3Cpath fill='%23c60b1e' d='M0 0h4v3H0z'/%3E%3Cpath fill='%23ffc400' d='M0 .75h4v1.5H0z'/%3E%3C/svg%3E" width="16" height="12" alt="" class="rounded-sm"/><span>Español</span></button>
+          <button type="button" class="lang-option" role="option" data-lang="en" aria-selected="false"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 45'%3E%3CclipPath id='c'%3E%3Cpath d='M0 0h60v45H0z'/%3E%3C/clipPath%3E%3Cg clip-path='url(%23c)'%3E%3Cpath fill='%23012169' d='M0 0h60v45H0z'/%3E%3Cpath stroke='%23fff' stroke-width='9' d='M0 0l60 45M60 0L0 45'/%3E%3Cpath stroke='%23C8102E' stroke-width='4' d='M0 0l60 45M60 0L0 45'/%3E%3Cpath stroke='%23fff' stroke-width='15' d='M30 0v45M0 22.5h60'/%3E%3Cpath stroke='%23C8102E' stroke-width='9' d='M30 0v45M0 22.5h60'/%3E%3C/g%3E%3C/svg%3E" width="16" height="12" alt="" class="rounded-sm"/><span>English</span></button>
+        </div>
+      </div>
+      <button type="button" id="theme-btn" class="atm-btn inline-flex h-8 w-8 items-center justify-center rounded-lg" title="Cambiar tema" aria-label="Cambiar tema">
+        <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>
+        <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <a id="cta-btn" href="${ctaHref}" class="inline-flex items-center rounded-full bg-pill px-3.5 py-1.5 font-sans text-xs font-semibold text-white no-underline shadow-sm transition-all hover:brightness-110 active:scale-[0.98]" data-i18n="cta">${ctaLabel}</a>
+    </div>
+  </div>
+  <nav class="mx-auto max-w-content px-3 pb-2 sm:px-4" aria-label="Secciones">
+    <div class="atm-subnav">
+${NAV.map(function (n) { return '      <a href="' + n[0] + '" data-i18n="' + n[1] + '">' + n[2] + '</a>'; }).join("\n")}
+    </div>
+  </nav>
 </header>`;
 }
 
 function footer() {
-  return `<footer class="foot">
-  <div class="warn">${RISK_WARNING}</div>
-  <div class="slot" id="${ETORO_WIDGET_SLOT_ID}" data-slot="etoro-risk-widget">
-    <p class="slot-label">Espacio para el banner oficial de eToro Partners</p>
+  return `<footer class="atm-foot mt-auto">
+  <div class="mx-auto max-w-content px-4 py-8 sm:px-5 md:py-10">
+    <div class="atm-sub-card mb-6 flex flex-col gap-3 rounded-2xl p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+      <div class="min-w-0">
+        <p class="font-sans text-sm font-semibold text-ink" data-i18n="footSubTitle">Suscribirse a las notas</p>
+        <p class="mt-1 font-sans text-xs leading-relaxed text-mute" data-i18n="footSubLead">Dos listas opcionales: Markets (franjas del día) e INVEST (educación y modelos mentales). Doble confirmación, baja en un clic.</p>
+      </div>
+      <a href="/suscribirse/" class="inline-flex shrink-0 items-center justify-center rounded-full bg-pill px-4 py-2 font-sans text-xs font-semibold text-white no-underline transition-all hover:brightness-110" data-i18n="footSubBtn">Suscribirse</a>
+    </div>
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div class="min-w-0">
+        <p class="font-sans text-sm font-semibold tracking-tight text-ink">INVEST</p>
+        <p class="mt-1 font-sans text-[11px] leading-relaxed text-dim" data-i18n="footBrand">Información general · Trujillo Mingorance / ATM Labs</p>
+      </div>
+      <nav class="atm-foot-legal font-sans text-xs" aria-label="Legal">
+        <a href="/aviso-legal/" data-i18n="navLegal">Aviso legal</a>
+        <span class="atm-foot-sep" aria-hidden="true">·</span>
+        <a href="/privacidad/" data-i18n="navPrivacy">Privacidad</a>
+        <span class="atm-foot-sep" aria-hidden="true">·</span>
+        <a href="https://charts.trujillomingorance.com/">Markets Briefing</a>
+        <span class="atm-foot-sep" aria-hidden="true">·</span>
+        <a href="/cookies/" data-i18n="navCookies">Cookies</a>
+        <span class="atm-foot-sep" aria-hidden="true">·</span>
+        <a href="/perfil/" data-i18n="navProfile">Perfil</a>
+        <span class="atm-foot-sep" aria-hidden="true">·</span>
+        <a href="https://labs.trujillomingorance.com" rel="noopener">ATM Labs</a>
+        <span class="atm-foot-sep" aria-hidden="true">·</span>
+        <a href="mailto:security@trujillomingorance.com">security@trujillomingorance.com</a>
+      </nav>
+    </div>
+    <div class="atm-foot-notice">
+      <p data-i18n="foot1">Esta web ofrece información general sobre sociedades cotizadas. No es una recomendación personalizada ni un servicio de inversión. No estamos registrados en la CNMV como empresa de servicios de inversión.</p>
+      <p class="mt-2" data-i18n="foot2">INVEST es una página informativa de Trujillo Mingorance. Resume contexto de mercado a partir de información pública. No constituye asesoramiento en materia de inversión, oferta pública ni recomendación personalizada con arreglo a la Directiva 2014/65/UE (MiFID II) ni a la Ley 6/2023, de 17 de marzo, de los Mercados de Valores y de los Servicios de Inversión.</p>
+      <p class="mt-2" data-i18n="foot3">Las rentabilidades pasadas no predicen rentabilidades futuras. Puede perderse la totalidad del capital. Los precios pueden ir retrasados y los datos, incompletos.</p>
+      <p class="mt-2">${AFFILIATE_DISCLOSURE}</p>
+      <p class="mt-2">${RISK_WARNING}</p>
+      <div id="${ETORO_WIDGET_SLOT_ID}" data-slot="etoro-risk-widget" class="etoro-slot"></div>
+      <p class="mt-2"><strong data-i18n="footCnmvLabel">CNMV / MiFID II</strong> — <span data-i18n="foot4">El titular no está inscrito en el registro de empresas de servicios de inversión de la CNMV ni presta el servicio de asesoramiento del artículo 140 de la Ley 6/2023.</span></p>
+    </div>
   </div>
-  <p class="fine">
-    <a href="/legal">Aviso legal y afiliación</a>
-    · <a href="/aviso-legal/">Aviso clásico</a>
-    · <a href="/privacidad/">Privacidad</a>
-    · <a href="/cookies/">Cookies</a>
-    · <a href="/suscribirse/">Notas</a>
-    · <a href="/perfil/">Perfil</a>
-  </p>
-  <p class="fine">Información general y educativa. El simulador usa dinero virtual. No es asesoramiento financiero.</p>
+  <div class="atm-net"><div class="atm-net__in"><a class="atm-net__brand" href="https://trujillomingorance.com/">ATM Software Labs</a><nav id="atm-net-nav" aria-label="Sitios de ATM Software Labs"><ul class="atm-net__sites"><li><a href="https://labs.trujillomingorance.com/">ATM Labs</a></li><li><a href="https://invest.trujillomingorance.com/" aria-current="page">INVEST</a></li><li><a href="https://charts.trujillomingorance.com/">Markets Briefing</a></li><li><a href="https://ai.trujillomingorance.com/">Trujillo AI</a></li><li><a href="https://guides.trujillomingorance.com/" data-i18n="netGuides">Guías</a></li><li><a href="https://tools.trujillomingorance.com/">Tools</a></li><li><a href="https://rewrite.trujillomingorance.com/">Rewrite</a></li></ul></nav></div></div>
 </footer>`;
 }
 
@@ -294,7 +318,7 @@ function themeScript() {
       foot4:'El titular no está inscrito en el registro de empresas de servicios de inversión de la CNMV ni presta el servicio de asesoramiento del artículo 140 de la Ley 6/2023.',
       navLegal:'Aviso legal',navPrivacy:'Privacidad',navCookies:'Cookies',navProfile:'Perfil',crumbProfile:'INVEST › PERFIL',profileH1:'Perfil inversor',profileTitle:'Perfil inversor · INVEST',
       footBrand:'Información general · Trujillo Mingorance / ATM Labs',footCnmvLabel:'CNMV / MiFID II',
-      navHome:'Consulta',navMunger:'Checklist Munger',navModels:'Modelos mentales',navCompare:'Comparar',navGlossary:'Glosario',navEssay:'Ensayo',navSubscribe:'Suscribirse',
+      navHome:'Consulta',navPulse:'Pulse',navCharts:'Gráficos',navCartera:'Cartera',navRanking:'Ranking',navAfiliacion:'Legal',navMunger:'Checklist Munger',navModels:'Modelos mentales',navCompare:'Comparar',navGlossary:'Glosario',navEssay:'Ensayo',navSubscribe:'Suscribirse',
       footSubTitle:'Suscribirse a las notas',footSubLead:'Dos listas opcionales: Markets (franjas del día) e INVEST (educación y modelos mentales). Doble confirmación, baja en un clic.',footSubBtn:'Suscribirse',netAria:'Sitios de ATM Software Labs',netGuides:'Guías',
       cardMungerEyebrow:'Checklist',cardModelsEyebrow:'Modelos',cardModelsTitle:'Modelos mentales',cardModelsLead:'Margen de seguridad, círculo de competencia, inversión, coste de oportunidad, redundancia, tasas base e incentivos.',
       cardGlossaryEyebrow:'Glosario',cardGlossaryTitle:'Términos del panel',cardGlossaryLead:'Qué significan FCF, margen neto, deuda LP, 10-K y el resto de cifras que muestra la consulta.',
@@ -328,7 +352,7 @@ function themeScript() {
       foot4:'The publisher is not registered as an investment firm with the CNMV and does not provide the advisory service under article 140 of Law 6/2023.',
       navLegal:'Legal notice',navPrivacy:'Privacy',navCookies:'Cookies',navProfile:'Profile',crumbProfile:'INVEST › PROFILE',profileH1:'Investor profile',profileTitle:'Investor profile · INVEST',
       footBrand:'General information · Trujillo Mingorance / ATM Labs',footCnmvLabel:'CNMV / MiFID II',
-      navHome:'Lookup',navMunger:'Munger checklist',navModels:'Mental models',navCompare:'Compare',navGlossary:'Glossary',navEssay:'Essay',navSubscribe:'Subscribe',
+      navHome:'Lookup',navPulse:'Pulse',navCharts:'Charts',navCartera:'Portfolio',navRanking:'Ranking',navAfiliacion:'Legal',navMunger:'Munger checklist',navModels:'Mental models',navCompare:'Compare',navGlossary:'Glossary',navEssay:'Essay',navSubscribe:'Subscribe',
       footSubTitle:'Subscribe to the notes',footSubLead:'Two optional lists: Markets (daily time slots) and INVEST (education and mental models). Double opt-in, one-click unsubscribe.',footSubBtn:'Subscribe',netAria:'ATM Software Labs sites',netGuides:'Guides',
       cardMungerEyebrow:'Checklist',cardModelsEyebrow:'Models',cardModelsTitle:'Mental models',cardModelsLead:'Margin of safety, circle of competence, inversion, opportunity cost, redundancy, base rates and incentives.',
       cardGlossaryEyebrow:'Glossary',cardGlossaryTitle:'Panel terms',cardGlossaryLead:'What FCF, net margin, LT debt, 10-K and the other lookup figures mean.',
@@ -403,7 +427,11 @@ function themeScript() {
     btn.setAttribute('aria-expanded','true');
   }
   // boot theme already applied in head; sync class/meta
-  try{ applyTheme('dark'); }catch(e){}
+  try{
+    var t=localStorage.getItem('invest.theme.v1');
+    if(t==='light'||t==='dark') applyTheme(t);
+    else applyTheme(root.getAttribute('data-theme')==='light'?'light':'dark');
+  }catch(e){}
   try{
     var l=localStorage.getItem('invest.lang.v1');
     applyLang((l==='en'||l==='es')?l:currentLang());

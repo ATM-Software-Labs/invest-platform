@@ -77,9 +77,9 @@ Datos de la web pública: cotizaciones y búsqueda de símbolos de **Yahoo Finan
 > [`wrangler.example.toml`](wrangler.example.toml): cópiala a `wrangler.terminal.toml` con
 > **otro** nombre de Worker y ejecuta `npm run deploy:terminal`.
 
-## Financial Hub
+## Páginas nuevas
 
-La portada del Worker (`/`) es el hub oscuro: **Pulse (2 min)**, **Terminal Charts** (`/charts?symbol=AAPL`), **Cartera & Tesis** y **Ranking**. La investigación anterior (búsqueda por ticker, nombre o ISIN, cotización, 10-K, checklist Munger, comparador y suscripción) sigue en el hub y en sus rutas (`/comparar/`, `/munger/`, `/suscribirse/`, `/aviso-legal/`).
+La portada sigue siendo la consulta de INVEST. Pulse, gráficos, cartera, ranking y el aviso de afiliación son páginas aparte, con la misma cabecera y el mismo pie: `/pulse/`, `/charts/?symbol=AAPL`, `/cartera/`, `/ranking/` y `/legal/`. La investigación anterior (búsqueda por ticker, nombre o ISIN, cotización, 10-K, checklist Munger, comparador y suscripción) sigue en `/`, `/comparar/`, `/munger/` y `/suscribirse/`.
 
 | Pulse | Velas y capas | Ranking |
 |:-:|:-:|:-:|
@@ -108,7 +108,7 @@ Cloudflare Pages, si más adelante se mueve el sitio (tampoco se despliega desde
 
 `/api/ohlcv` y `/api/pulse` cachean con `caches.default` (15 min intradía, 60 min diario, 20 min el pulso) y cortan antes de trabajar un user-agent vacío, un escáner conocido o rutas `wp-*`, `.env` y `.php`. El HTML, el JS y Lightweight Charts van en `[assets]` (`public/`), no dentro del script: el plan gratuito rechaza un Worker de más de 1 MiB. `robots.txt` y el favicon se sirven como estáticos.
 
-El HTML (hub y páginas clásicas) sale con `Cache-Control: public, max-age=0, must-revalidate` y `CDN-Cache-Control: public, max-age=60`. `hub.css`, `hub.js` y `chart.js` llevan `?v=` con hash de contenido, así que un HTML nuevo no reutiliza JS o CSS viejos. En `invest.trujillomingorance.com` el ajuste de zona `browser_cache_ttl=14400` sigue reescribiendo el `Cache-Control` que ve el navegador a 4 horas (`edge_cache_ttl=7200`). No se ha purgado la caché de zona ni se ha cambiado ese ajuste: quien ya tenga la página antigua en el navegador la verá hasta que caduque o fuerce la recarga.
+El HTML sale con `Cache-Control: public, max-age=0, must-revalidate` y `CDN-Cache-Control: public, max-age=60`. `hub.css`, `hub.js` y `chart.js` llevan `?v=` con hash de contenido, así que un HTML nuevo no reutiliza JS o CSS viejos. En `invest.trujillomingorance.com` el ajuste de zona `browser_cache_ttl=14400` puede seguir reescribiendo el `Cache-Control` que ve el navegador (`edge_cache_ttl=7200`). No se ha purgado la caché de zona ni se ha cambiado ese ajuste.
 
 ### Redirección de charts.trujillomingorance.com
 
@@ -117,7 +117,7 @@ Hay que aplicarla a mano en el panel (Reglas → Redirect Rules). **No** borra e
 - Si `http.host eq "charts.trujillomingorance.com"` y la ruta no empieza por `/c/`, `/api/`, `/logo`, `/logos/`, `/health`, `/fonts/` ni `/flags/`
 - Entonces redirect dinámico **301** a `concat("https://invest.trujillomingorance.com/charts", http.request.uri.path)` con **Preserve query string**
 
-`public/_redirects` reescribe en este proyecto `/charts`, `/cartera`, `/ranking`, `/legal` y `/activo` al `index.html` del hub (no afecta al otro dominio).
+`/pulse/`, `/charts/`, `/cartera/`, `/ranking/`, `/legal/` y `/activo/` las sirve el mismo Worker, con la cabecera de INVEST. No hay redirección de `charts.trujillomingorance.com` en este repositorio.
 
 ### eToro Partners
 
