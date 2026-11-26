@@ -704,9 +704,104 @@
     }
   } catch (err) {}
 
+  var BOARD = ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA", "JPM", "SAN.MC", "ITX.MC", "SPY", "GLD"];
+  var DOMAINS = { AAPL: "apple.com", MSFT: "microsoft.com", NVDA: "nvidia.com", GOOGL: "abc.xyz", AMZN: "amazon.com", META: "meta.com", TSLA: "tesla.com", JPM: "jpmorganchase.com", "SAN.MC": "santander.com", "ITX.MC": "inditex.com", SPY: "ssga.com", GLD: "spdrgoldshares.com" };
+  function etoroHref(symbol) {
+    return "https://www.etoro.com/markets/" + encodeURIComponent(String(symbol || "").replace(/[^\w.\-^=]/g, ""));
+  }
+  function logoNode(symbol) {
+    var img = document.createElement("img");
+    img.className = "logo";
+    img.alt = "";
+    img.width = 36;
+    img.height = 36;
+    img.src = "https://charts.trujillomingorance.com/logo/" + encodeURIComponent(symbol) + ".png";
+    img.addEventListener("error", function () {
+      if (img.dataset.step !== "1" && DOMAINS[symbol]) {
+        img.dataset.step = "1";
+        img.src = "https://www.google.com/s2/favicons?sz=128&domain=" + encodeURIComponent(DOMAINS[symbol]);
+        return;
+      }
+      var span = document.createElement("span");
+      span.className = "logo-fallback";
+      span.textContent = String(symbol).replace(/[^A-Za-z0-9]/g, "").slice(0, 2) || "?";
+      img.replaceWith(span);
+    });
+    return img;
+  }
+  function tradeLinks(symbol) {
+    var box = document.createElement("div");
+    box.className = "trade";
+    ["Comprar", "Vender"].forEach(function (label, i) {
+      var a = document.createElement("a");
+      a.className = i === 0 ? "buy" : "sell";
+      a.href = etoroHref(symbol);
+      a.target = "_blank";
+      a.rel = "sponsored nofollow noopener";
+      a.textContent = label;
+      box.appendChild(a);
+    });
+    return box;
+  }
+  function paintBoard(rows) {
+    var host = document.getElementById("mercado-list");
+    var asof = document.getElementById("mercado-asof");
+    if (!host) return;
+    host.textContent = "";
+    if (!rows.length) {
+      host.appendChild(el("p", "font-sans text-sm text-mute", "No se ha podido leer el mercado. Se reintenta solo."));
+      return;
+    }
+    rows.forEach(function (row) {
+      if (!row || !(row.price > 0)) return;
+      var line = document.createElement("div");
+      line.className = "broker-row";
+      line.appendChild(logoNode(row.symbol));
+      var mid = document.createElement("div");
+      mid.className = "min-w-0";
+      var name = document.createElement("a");
+      name.className = "name";
+      name.href = "/activo/?symbol=" + encodeURIComponent(row.symbol);
+      name.textContent = row.name || row.symbol;
+      var meta = document.createElement("p");
+      meta.className = "font-mono text-[11px] text-dim";
+      var ch = Number(row.changePct);
+      if (!Number.isFinite(ch)) ch = 0;
+      var up = ch > 0;
+      var down = ch < 0;
+      meta.innerHTML = row.symbol + " · " + Number(row.price).toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " " + (row.currency || "") + " · <span class=\"" + (up ? "chg-up" : down ? "chg-down" : "") + "\">" + (ch > 0 ? "+" : "") + ch.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " %</span>";
+      mid.appendChild(name);
+      mid.appendChild(meta);
+      line.appendChild(mid);
+      line.appendChild(tradeLinks(row.symbol));
+      host.appendChild(line);
+    });
+    if (asof) asof.textContent = "Actualizado " + new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+  }
+  function loadBoard() {
+    fetch("/api/pulse?symbols=" + encodeURIComponent(BOARD.join(",")), { headers: { Accept: "application/json" } })
+      .then(function (r) { return r.json(); })
+      .then(function (data) { paintBoard((data && data.rows) || []); })
+      .catch(function () { paintBoard([]); });
+  }
+  function pollMs() {
+    var hour = Number(new Intl.DateTimeFormat("en-GB", { hour: "2-digit", hourCycle: "h23", timeZone: "Europe/Madrid" }).format(new Date()));
+    var day = new Intl.DateTimeFormat("en-GB", { weekday: "short", timeZone: "Europe/Madrid" }).format(new Date());
+    if (day === "Sat" || day === "Sun" || hour < 8 || hour >= 22) return 300000;
+    return 45000;
+  }
+  function scheduleBoard() {
+    setTimeout(function () {
+      if (document.visibilityState === "visible") loadBoard();
+      scheduleBoard();
+    }, pollMs());
+  }
+
   purgeInvalid();
   renderGrid();
   renderListsPanel();
   renderProfileSuggestions();
+  loadBoard();
+  scheduleBoard();
   document.addEventListener("invest:lang", function () { renderProfileSuggestions(); });
 })();
